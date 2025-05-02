@@ -12,7 +12,25 @@ This is a full-stack application with a React frontend and FastAPI backend.
 
 ## Setup Instructions
 
-### Backend Setup
+### Quick Start
+
+1. Install all dependencies:
+   ```bash
+   npm run install-all
+   ```
+
+2. Start both frontend and backend servers:
+   ```bash
+   npm start
+   ```
+
+This will start:
+- Frontend at `http://localhost:5173`
+- Backend at `http://localhost:8000`
+
+### Detailed Setup
+
+#### Backend Setup
 
 1. Navigate to the backend directory:
    ```bash
@@ -30,14 +48,7 @@ This is a full-stack application with a React frontend and FastAPI backend.
    pip install -r requirements.txt
    ```
 
-4. Run the backend server:
-   ```bash
-   uvicorn main:app --reload
-   ```
-
-The backend will be available at `http://localhost:8000`
-
-### Frontend Setup
+#### Frontend Setup
 
 1. Navigate to the frontend directory:
    ```bash
@@ -49,13 +60,6 @@ The backend will be available at `http://localhost:8000`
    npm install
    ```
 
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-The frontend will be available at `http://localhost:5173`
-
 ## Features
 
 - Modern React frontend with TypeScript
@@ -63,4 +67,5 @@ The frontend will be available at `http://localhost:5173`
 - Tailwind CSS for styling
 - React Query for data fetching
 - Axios for HTTP requests
+- Concurrent development server management
 
