@@ -67,7 +67,7 @@ class State(rx.State):
         self.submit_phrase = None 
 
     @rx.var
-    def submit_sequence(self):
+    def submit_sequence(self) -> list:
         if self.submit_phrase is None:
             return []
         return [
