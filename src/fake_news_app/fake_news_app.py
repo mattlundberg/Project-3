@@ -1,35 +1,36 @@
 import reflex as rx
 import random
 from rxconfig import config
+from reflex_type_animation import type_animation
 
 class State(rx.State):
     output_count: int = 0
     post_text: str = ""
     output_label: str = "74% False"
-    submit_phrases_display: list[str] = ["", "", ""]
-    submit_phrase_key: int = 0
+    submit_phrase: str | None = None
+    animation_key: int = 0
 
     submit_phrases = [
-        "Feeding Fake News Hamsters",
-        "Combing Through Dumpster X",
-        "Greasing the Gears of Progress",
-        "Polishing the Data Diamonds",
-        "Waking Up the Server Gremlins",
-        "Tickling the Code Monkeys",
-        "Charging the Quantum Batteries",
-        "Brewing the Algorithm Soup",
-        "Herding Digital Cats",
-        "Spinning the Data Wheel",
-        "Sharpening the Logic Knives",
-        "Tuning the Neural Networks",
-        "Stirring the Binary Cauldron",
-        "Training the Robot Ninjas",
-        "Dusting Off the Server Cobwebs",
-        "Juggling Bits and Bytes",
-        "Chasing Down Bug Gremlins",
-        "Wiring the Synapse Circuits",
-        "Squeezing the Data Lemons",
-        "Summoning the Code Wizards"
+        "Feeding Fake News Hamsters...",
+        "Combing Through Dumpster X...",
+        "Greasing the Gears of Progress...",
+        "Polishing the Data Diamonds...",
+        "Waking Up the Server Gremlins...",
+        "Tickling the Code Monkeys...",
+        "Charging the Quantum Batteries...",
+        "Brewing the Algorithm Soup...",
+        "Herding Digital Cats...",
+        "Spinning the Data Wheel...",
+        "Sharpening the Logic Knives...",
+        "Tuning the Neural Networks...",
+        "Stirring the Binary Cauldron...",
+        "Training the Robot Ninjas...",
+        "Dusting Off the Server Cobwebs...",
+        "Juggling Bits and Bytes...",
+        "Chasing Down Bug Gremlins...",
+        "Wiring the Synapse Circuits...",
+        "Squeezing the Data Lemons...",
+        "Summoning the Code Wizards..."
     ]
 
     @rx.var
@@ -63,6 +64,22 @@ class State(rx.State):
 
     def clear_post_text(self):
         self.post_text = ""
+        self.submit_phrase = None 
+
+    @rx.var
+    def submit_sequence(self):
+        if self.submit_phrase is None:
+            return []
+        return [
+            self.submit_phrase, 1000,
+            self.submit_phrase, 1000,
+            self.submit_phrase, 1000,
+            "Ready"
+        ]
+
+    def set_random_phrase(self):
+        self.submit_phrase = random.choice(self.submit_phrases)
+        self.animation_key += 1
 
 def index() -> rx.Component:
     return rx.container(
@@ -111,7 +128,7 @@ def main_page() -> rx.Component:
                 ),
                 rx.button(
                     "Submit",
-                    #on_click="",
+                    on_click=State.set_random_phrase,
                     color_scheme="green",
                     height="65px",
                     min_width="100px",
@@ -132,7 +149,29 @@ def main_page() -> rx.Component:
                     on_click=State.clear_post_text,
                     color_scheme="red",
                 ),
-            
+                rx.box(
+                    rx.cond(
+                        State.submit_sequence != [],
+                        type_animation(
+                            sequence=State.submit_sequence,
+                            speed=50,
+                            cursor=True,
+                            wrapper="span",
+                            style={"font-size": "1em"},
+                            key=State.animation_key,
+                            repeat=0,
+                        ),
+                        rx.text(""),
+                    ),
+                    width="300px",
+                    height="40px",
+                    padding="10px",
+                    display="flex",
+                    align_items="right",
+                    justify_content="right",
+                    text_align="right",
+                    margin_left="30px",
+                ),
     spacing="3",
 ),
             # Output and count side by side below
