@@ -89,25 +89,71 @@ class State(rx.State):
         self.animation_key += 1
 
 def index() -> rx.Component:
-    return rx.container(
+    return rx.box(
         rx.color_mode.button(position="top-right"),
-        rx.vstack(
-            rx.heading("404 Not Found", size="9"),
-            rx.text(
-                "Final Project - AI BootCamp - May 2025",
-                size="5",
+        rx.center(
+            rx.vstack(
+                rx.heading(
+                    "404 Not Found",
+                    size={"base": "7", "md": "9"},
+                    style={"font_family": "Lato"},
+                    text_align="center",
+                    font_weight="bold",
+                    color="black",
+                ),
+                rx.image(
+                    src="/Fake-news.jpg",
+                    alt="Page not found image",
+                    width="900px",
+                    height="auto",
+                    border_radius="xl"
+                ),
+                rx.text(
+                    size="4",
+                    text_align="center",
+                    color="gray",
+                    style={"font_family": "Lato"},
+                ),
+                rx.text(
+                    "Final Project - AI BootCamp - May 2025",
+                    size={"base": "5", "md": "6"},
+                    style={"font_family": "Lato"},
+                    text_align="center",
+                    font_weight="bold",
+                    color="black",
+                ),
+                rx.link(
+                    rx.button(
+                        "Peel Back the Truth!",
+                        style={
+                            "font_size": "20px",
+                            "font_family": "Lato",
+                            "padding": "16px 32px",
+                            "background_color": "#D9863B",
+                            "color": "white",
+                            "border_radius": "8px",
+                            "font_weight": "bold",
+                        },
+                        _hover={
+                            "transform": "scale(1.05)",
+                            "background_color": "#BA5A31",
+                        },
+                        transition="all 0.3s ease-in-out",
+                    ),
+                    href="/main",
+                    is_external=False,
+                ),
+                rx.logo(),
+                spacing="4",  
+                align="center",
             ),
-            rx.link(
-                rx.button("Get Started!"),
-                href="/main",
-                is_external=False,
-            ),
-            spacing="5",
-            justify="center",
-            min_height="85vh",
+            min_height="100vh",
         ),
-        rx.logo(),
+        width="100%",
+        min_height="100vh",
+        background="linear-gradient(to right, #EAE4D9, #6E5841)",
     )
+
 
 def main_page() -> rx.Component:
     return rx.box(
