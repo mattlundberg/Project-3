@@ -6,7 +6,7 @@ from reflex_type_animation import type_animation
 class State(rx.State):
     output_count: int = 0
     post_text: str = ""
-    output_label: str = "74% False"
+    output_label: str = ""
     submit_phrase: str | None = None
     animation_key: int = 0
 
@@ -31,6 +31,13 @@ class State(rx.State):
         "Wiring the Synapse Circuits...",
         "Squeezing the Data Lemons...",
         "Summoning the Code Wizards..."
+    ]
+    verdicts = [
+        "Pants on Fire",
+        "False",
+        "Mostly False",
+        "Half True",
+        "Mostly True"
     ]
 
     @rx.var
@@ -57,24 +64,24 @@ class State(rx.State):
             post = random.choice(real_posts)
         self.post_text = post
 
-        fake_prob = random.randint(50, 100)
-        self.output_label = f"{fake_prob}% False"
-        if fake_prob > 75:
+        verdict = random.choice(self.verdicts)
+        self.output_label = verdict
+        if verdict in ["Pants on Fire", "False", "Mostly False"]:
             self.output_count += 1
 
     def clear_post_text(self):
         self.post_text = ""
         self.submit_phrase = None 
+        self.animation_key = 0
+        self.output_label = ""
 
     @rx.var
     def submit_sequence(self) -> list:
         if self.submit_phrase is None:
             return []
         return [
-            self.submit_phrase, 1000,
-            self.submit_phrase, 1000,
-            self.submit_phrase, 1000,
-            "Ready"
+            self.submit_phrase, 1500,
+            "Results Ready..."
         ]
 
     def set_random_phrase(self):
@@ -103,124 +110,138 @@ def index() -> rx.Component:
     )
 
 def main_page() -> rx.Component:
-    return rx.container(
-        rx.heading(
-            "Click Bait Buster!",
-            font_size="3em",
-            margin_bottom="20px",
-        ),
-        rx.text(
-            "Paste a social media post to check its authenticity.",
-            margin_bottom="20px",
-        ),
+    return rx.box(
         rx.vstack(
-            # Text area and Submit button side by side
-            rx.hstack(
-                rx.text_area(
-                    value=State.post_text,
-                    placeholder="Enter news link or article text here...",
-                    width="500px",
-                    height="50px",
-                    border="2px solid",
-                    border_color="teal",
-                    resize="none",
-                    on_change=State.set_post_text,
-                ),
-                rx.button(
-                    "Submit",
-                    on_click=State.set_random_phrase,
-                    color_scheme="green",
-                    height="65px",
-                    min_width="100px",
-                    font_size="1.5em",
-                    _hover={"opacity": 0.8},
-                ),
-                spacing="3",
+            rx.heading(
+                "Click Bait Buster!",
+                font_size="5em",
+                margin_bottom="20px",
+                color="black",
             ),
-            # Generate, Clear, and animated phrases on the same row
-            rx.hstack(
-                rx.button(
-                    "Generate Social Media Post",
-                    on_click=State.generate_post,
-                    color_scheme="teal",
+            rx.text(
+                "Paste a social media post to check its authenticity.",
+                style={"font-size": "1.5em"},
+                margin_bottom="20px",
+                color="#00695C",
+            ),
+            rx.vstack(
+                rx.hstack(
+                    rx.text_area(
+                        value=State.post_text,
+                        placeholder="Enter social media post here...",
+                        width="500px",
+                        height="50px",
+                        border="3px solid",
+                        border_color="teal",
+                        resize="none",
+                        on_change=State.set_post_text,
+                    ),
+                    rx.button(
+                        "Submit",
+                        on_click=State.set_random_phrase,
+                        color_scheme="green",
+                        height="65px",
+                        min_width="100px",
+                        font_size="1.5em",
+                        _hover={"opacity": 0.8},
+                    ),
+                    spacing="3",
                 ),
-                rx.button(
-                    "Clear",
-                    on_click=State.clear_post_text,
-                    color_scheme="red",
-                ),
-                rx.box(
-                    rx.cond(
-                        State.submit_sequence != [],
-                        type_animation(
-                            sequence=State.submit_sequence,
-                            speed=50,
-                            cursor=True,
-                            wrapper="span",
-                            style={"font-size": "1em"},
-                            key=State.animation_key,
-                            repeat=0,
+                rx.hstack(
+                    rx.button(
+                        "Generate Social Media Post",
+                        on_click=State.generate_post,
+                        color_scheme="teal",
+                    ),
+                    rx.button(
+                        "Clear",
+                        on_click=State.clear_post_text,
+                        color_scheme="red",
+                    ),
+                    rx.box(
+                        rx.cond(
+                            State.submit_sequence != [],
+                            type_animation(
+                                sequence=State.submit_sequence,
+                                speed=50,
+                                cursor=False,
+                                wrapper="span",
+                                style={"font-size": "1em"},
+                                color="teal",
+                                key=State.animation_key,
+                                repeat=0,
+                            ),
+                            rx.text(""),
                         ),
-                        rx.text(""),
+                        width="300px",
+                        height="40px",
+                        padding="10px",
+                        display="flex",
+                        align_items="right",
+                        justify_content="right",
+                        text_align="right",
+                        margin_left="30px",
                     ),
-                    width="300px",
-                    height="40px",
-                    padding="10px",
-                    display="flex",
-                    align_items="right",
-                    justify_content="right",
-                    text_align="right",
-                    margin_left="30px",
+                    spacing="3",
                 ),
-    spacing="3",
-),
-            # Output and count side by side below
-            rx.hstack(
+                rx.hstack(
+                    rx.box(
+                        rx.text(
+                            State.output_label,
+                            font_size="2.5em",
+                            font_weight="bold",
+                            color="black",
+                        ),
+                        width="300px",
+                        height="150px",
+                        border="3px solid",
+                        border_color="teal",
+                        background_color="lightgray",
+                        padding="10px",
+                        display="flex",
+                        align_items="center",
+                        justify_content="center",
+                        text_align="center",
+                    ),
+                    rx.box(
+                        rx.text(
+                            State.output_count_label,
+                            font_size="2em",
+                            font_weight="bold",
+                        ),
+                        width="300px",
+                        height="150px",
+                        border="3px solid",
+                        border_color="teal",
+                        background_color="lightgray",
+                        padding="10px",
+                        display="flex",
+                        align_items="center",
+                        justify_content="center",
+                        text_align="center",
+                    ),
+                    spacing="3",
+                ),
                 rx.box(
-                    rx.text(
-                        State.output_label,
-                        font_size="3.5em",
-                        font_weight="bold",
+                    rx.link(
+                        rx.button("Back to Home", color_scheme="teal"),
+                        href="/",
+                        is_external=False,
                     ),
-                    width="300px",
-                    height="150px",
-                    border="2px solid",
-                    border_color="teal",
-                    padding="10px",
-                    display="flex",
-                    align_items="center",
-                    justify_content="center",
-                    text_align="center",
                 ),
-                rx.box(
-                    rx.text(
-                        State.output_count_label,
-                        font_size="2em",
-                        font_weight="bold",
-                    ),
-                    width="300px",
-                    height="150px",
-                    border="2px solid",
-                    border_color="teal",
-                    padding="10px",
-                    display="flex",
-                    align_items="center",
-                    justify_content="center",
-                    text_align="center",
-                ),
-                spacing="3",
+                spacing="5",
             ),
-            rx.box(
-                rx.link(
-                    rx.button("Back to Home", color_scheme="teal"),
-                    href="/",
-                    is_external=False,
-                ),
-            ),
-            spacing="5",
+            spacing="3",
+            align_items="center",
         ),
-        spacing="3",
+        width="100vw",
+        height="100vh",
+        background="linear-gradient(to right, #E0F7FA, #80DEEA)",
+        justify_content="center",
+        align_items="center",
+        display="flex",
     )
+
 
 app = rx.App()
 app.add_page(index)
