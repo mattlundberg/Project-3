@@ -80,7 +80,7 @@ class State(rx.State):
         if self.submit_phrase is None:
             return []
         return [
-            self.submit_phrase, 1500,
+            self.submit_phrase, 2000,
             "Results Ready..."
         ]
 
@@ -191,7 +191,13 @@ def main_page() -> rx.Component:
                     rx.button(
                         "Submit",
                         on_click=State.set_random_phrase,
-                        style = {"font_family":"Lato"},
+                        style={
+                            "font_size": "20px",
+                            "font_family": "Lato",
+                            "color": "white",
+                            "border_radius": "8px",
+                            "font_weight": "bold",
+                        },
                         color_scheme="green",
                         height="65px",
                         min_width="100px",
@@ -206,11 +212,22 @@ def main_page() -> rx.Component:
                         "Generate Social Media Post",
                         on_click=State.generate_post,
                         color_scheme="bronze",
+                        style={
+                            "font_family": "Lato",
+                            "background_color": "#D9863B",
+                            "color": "white",
+                            "border_radius": "8px",
+                        },
                     ),
                     rx.button(
                         "Clear",
                         on_click=State.clear_post_text,
                         color_scheme="red",
+                        style={
+                            "font_family": "Lato",
+                            "color": "white",
+                            "border_radius": "8px",
+                        },
                     ),
                     rx.box(
                         rx.cond(
@@ -275,7 +292,12 @@ def main_page() -> rx.Component:
                         rx.button(
                             "Back to Home",
                             color_scheme="bronze",
-                            style = {"font_family":"Lato"}),
+                            style={
+                            "font_family": "Lato",
+                            "background_color": "#D9863B",
+                            "color": "white",
+                            "border_radius": "8px",
+                        },),
                         href="/",
                         is_external=False,
                     ),
