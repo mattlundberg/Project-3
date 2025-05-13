@@ -1,71 +1,56 @@
-# React + FastAPI Full Stack Application
+# Project-3: The Onionator: Peeling Back Fake News One Headline at a Time
+## Slack Channel
+Join our Slack channel for project discussions and updates:
+- Channel: #404-not-found
+- Link: [404 Not Found](https://aiptwestnovem-cki2893.slack.com/archives/C089LSTUQER)
 
-This is a full-stack application with a React frontend and FastAPI backend.
+## Team Members
+- Tiffany Jimenez
+- Sam Lara
+- Matthew Lundberg
+- Jason Smoody
+- Erin Spencer-Priebe 
+ 
+ ## Project Milestones
 
-## Project Structure
+| Milestone | Due Date | Status |
+|----------|----------|----------|
+| Project Ideation | 4/29/25 | Complete |
+| [Back End] Data Fetching & Clean Up | 5/5/25 | Complete |
+| [Back End] Model Build | 5/12/25 | In Progress |
+| [Front End] Build Title Page | 5/8/25 | Complete |
+| [Front End] Build Main/App Page | 5/8/25 | Complete |
+| [Front End] Refine Main/App Features | 5/12/25 | In Progress |
+| Bridge Front and Back End | 5/13/25 | To Do |
+| Create Presentation | 5/15/25 | To Do |
 
-```
-.
-├── frontend/          # React frontend
-└── backend/          # FastAPI backend
-```
+## Proposal
+Did you hear about the latest headline claiming a celebrity turned into an avocado? No? Well, that’s exactly the kind of fake news-and viral satire-that floods our social media feeds every day. These outrageous posts are as wild as your uncle’s conspiracy theories after one too many holiday dinners. Scrolling through your feed can feel like diving into a maze of confusing and sometimes hilarious stories that make you question reality (and your family gatherings). 
 
-## Setup Instructions
+Our proposal is to build a model that takes in everything from suspicious headlines to eyebrow-raising tweets and tells you whether you’re about to share real news, clickbait, or the latest viral joke-saving you from spreading “BREAKING: Celebrity Turns Into Avocado” level nonsense.
 
-### Quick Start
+## Slide Deck
+[The Onionator: Peeling Back Fake News One Headline at a Time](TBD)
 
-1. Install all dependencies:
-   ```bash
-   npm run install-all
-   ```
+## Data sets
+TBD
 
-2. Start both frontend and backend servers:
-   ```bash
-   npm start
-   ```
+## Future Research Questions and Issues
+TBD
 
-This will start:
-- Frontend at `http://localhost:5173`
-- Backend at `http://localhost:8000`
+# Program Information
 
-### Detailed Setup
+## Overview
 
-#### Backend Setup
+### Core Features
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
+### Programming Languages
 
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   .\venv\Scripts\activate  # On Windows
-   ```
+### Required Libraries/Dependencies
+ 
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Development Environment
 
-#### Frontend Setup
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-## Features
-
-- Modern React frontend with TypeScript
-- FastAPI backend with CORS support
-- Tailwind CSS for styling
-- React Query for data fetching
-- Axios for HTTP requests
-- Concurrent development server management
+### Model Results
 
