@@ -16,7 +16,7 @@ class ModelHelper:
         Args:
             model_dir: Directory to store model files
         """
-        self.truthfulness_columns = ['barely_true_counts', 'pants_on_fire_counts', 'mostly_true_counts', 'half_true_counts', 'false_counts']
+        self.truthfulness_columns = ['barely_true_counts', 'false_counts', 'half_true_counts', 'mostly_true_counts', 'pants_on_fire_counts']
         self.model_dir = model_dir
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
