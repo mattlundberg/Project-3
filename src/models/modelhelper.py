@@ -67,7 +67,7 @@ class ModelHelper:
             
     def create_text_classification_model(self,
                                        vocab_size: int,
-                                       embedding_dim: int = 300,  # Increased for better word representation
+                                       embedding_dim: int = 400,  # Increased for better word representation
                                        max_sequence_length: int = 200,
                                        num_classes: int = 5) -> tf.keras.Model:
         """
@@ -82,47 +82,63 @@ class ModelHelper:
         Returns:
             Compiled TensorFlow model
         """
+        # Initialize a sequential model for text classification
         model = tf.keras.Sequential([
-            # Input layer for text sequences
+            # Input layer that accepts sequences of integers (word indices) of fixed length
+            # Shape: (batch_size, max_sequence_length)
             tf.keras.layers.Input(shape=(max_sequence_length,), dtype=tf.float32),
             
-            # Embedding layer with stronger regularization
+            # Embedding layer converts integer indices to dense vectors of size embedding_dim
+            # L2 regularization helps prevent overfitting by penalizing large weights
+            # Shape: (batch_size, max_sequence_length, embedding_dim) 
             tf.keras.layers.Embedding(vocab_size, embedding_dim,
                                     embeddings_regularizer=tf.keras.regularizers.l2(0.001)),
             
-            # Multiple Conv1D layers with different kernel sizes to capture various n-gram patterns
+            # Parallel CNN layers to capture different n-gram patterns:
+            # 3-gram patterns (local features spanning 3 words)
+            # Shape: (batch_size, max_sequence_length, 256)
             tf.keras.layers.Conv1D(256, 3, activation='relu', padding='same'),
-            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.BatchNormalization(),  # Normalize activations for stable training
+            
+            # 5-gram patterns (medium-range features spanning 5 words) 
             tf.keras.layers.Conv1D(256, 5, activation='relu', padding='same'),
             tf.keras.layers.BatchNormalization(),
+            
+            # 7-gram patterns (longer-range features spanning 7 words)
             tf.keras.layers.Conv1D(256, 7, activation='relu', padding='same'),
             tf.keras.layers.BatchNormalization(),
             
-            # Concatenate the different n-gram features
-            #tf.keras.layers.Concatenate(),
-            
-            # Bidirectional LSTM with more units and return sequences
+            # First Bidirectional LSTM processes sequences in both directions
+            # return_sequences=True keeps temporal dimension for next layer
+            # Shape: (batch_size, max_sequence_length, 2*128)
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128, return_sequences=True)),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dropout(0.3),  # Randomly drop 30% of units to prevent overfitting
             
-            # Second Bidirectional LSTM layer
+            # Second Bidirectional LSTM layer for higher-level sequence features
+            # Shape: (batch_size, 2*64)
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.3),
             
-            # Dense layers with residual connections
+            # Dense layers for high-level feature extraction
+            # L2 regularization on weights helps prevent overfitting
+            # Shape: (batch_size, 256)
             tf.keras.layers.Dense(256, activation='relu',
                                 kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.3),
             
+            # Second dense layer further reduces dimensionality
+            # Shape: (batch_size, 128) 
             tf.keras.layers.Dense(128, activation='relu',
                                 kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.3),
             
-            # Output layer with 5 neurons for 5 truthfulness categories
+            # Final output layer with softmax activation for multi-class classification
+            # Shape: (batch_size, num_classes)
+            # Each output represents probability of text belonging to that truthfulness category
             tf.keras.layers.Dense(num_classes, activation='softmax')
         ])
         
@@ -134,7 +150,7 @@ class ModelHelper:
             decay_rate=0.9,
             staircase=True)
         
-        optimizer = tf.keras.optimizers.Adam()
+        optimizer = tf.keras.optimizers.AdamW(learning_rate=initial_learning_rate)
         
         model.compile(
             optimizer=optimizer,
