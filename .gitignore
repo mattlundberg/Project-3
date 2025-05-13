@@ -1,5 +1,6 @@
 #cursor
 .cursorrules
+logs/
 
 # Python
 __pycache__/
