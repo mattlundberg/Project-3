@@ -2,6 +2,10 @@ import reflex as rx
 import random
 from rxconfig import config
 from reflex_type_animation import type_animation
+from models.modelhelper import ModelHelper
+
+model_helper = ModelHelper()
+loaded_model = model_helper.load_model('text_classification_model')
 
 class State(rx.State):
     output_count: int = 0
@@ -87,6 +91,17 @@ class State(rx.State):
     def set_random_phrase(self):
         self.submit_phrase = random.choice(self.submit_phrases)
         self.animation_key += 1
+    
+    def predict_post(self):
+        text = self.post_text
+        result = loaded_model.predict(model_helper.preprocess_text(text))
+        self.output_label = str(result[0])  # Convert to string if needed
+
+    def submit_and_predict(self):
+        self.set_random_phrase()
+        self.predict_post()
+
+
 
 def index() -> rx.Component:
     return rx.box(
@@ -154,7 +169,6 @@ def index() -> rx.Component:
         background="linear-gradient(to right, #EAE4D9, #6E5841)",
     )
 
-
 def main_page() -> rx.Component:
     return rx.box(
         rx.vstack(
@@ -190,7 +204,7 @@ def main_page() -> rx.Component:
                     ),
                     rx.button(
                         "Submit",
-                        on_click=State.set_random_phrase,
+                        on_click=State.submit_and_predict,
                         style={
                             "font_size": "20px",
                             "font_family": "Lato",
