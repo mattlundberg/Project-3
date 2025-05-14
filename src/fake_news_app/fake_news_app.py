@@ -3,6 +3,7 @@ import random
 from rxconfig import config
 from reflex_type_animation import type_animation
 from models.modelhelper import ModelHelper
+import numpy as np
 
 model_helper = ModelHelper()
 loaded_model = model_helper.load_model('text_classification_model')
@@ -13,6 +14,9 @@ class State(rx.State):
     output_label: str = ""
     submit_phrase: str | None = None
     animation_key: int = 0
+    image_src: str = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"  # default image
+    is_animating: bool = False
+
 
     submit_phrases = [
         "Feeding Fake News Hamsters...",
@@ -68,23 +72,20 @@ class State(rx.State):
             post = random.choice(real_posts)
         self.post_text = post
 
-        verdict = random.choice(self.verdicts)
-        self.output_label = verdict
-        if verdict in ["Pants on Fire", "False", "Mostly False"]:
-            self.output_count += 1
 
     def clear_post_text(self):
         self.post_text = ""
         self.submit_phrase = None 
         self.animation_key = 0
         self.output_label = ""
+        self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
 
     @rx.var
     def submit_sequence(self) -> list:
         if self.submit_phrase is None:
             return []
         return [
-            self.submit_phrase, 2000,
+            self.submit_phrase, 1000,
             "Results Ready..."
         ]
 
@@ -95,11 +96,43 @@ class State(rx.State):
     def predict_post(self):
         text = self.post_text
         result = loaded_model.predict(model_helper.preprocess_text(text))
-        self.output_label = str(result[0])  # Convert to string if needed
+        # Ensure result is a flat array or list
+        if hasattr(result, "flatten"):
+            result = result.flatten()
+        # Get index and value of the highest prediction
+        max_index = int(np.argmax(result))
+        max_value = float(np.max(result))
+        if max_index == 0:
+            self.output_label = f"Barely True"
+        elif max_index == 1:
+            self.output_label = f"Probably False 🧅"
+        elif max_index == 2:
+            self.output_label = f"Half True"
+        elif max_index == 3:
+            self.output_label = f"Probably True 📰"
+        else:
+            self.output_label = f"Result: {max_index}\nScore: {max_value:.2f}"
+        
+        if max_index == 3:
+            self.image_src = "/ChatGPT Image May 12, 2025 at 08_24_16 PM.png"
+        else:
+            self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
 
     def submit_and_predict(self):
         self.set_random_phrase()
         self.predict_post()
+
+    def start_animation(self):
+        self.set_random_phrase()
+        self.is_animating = True
+        self.output_label = ""
+        self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+        self.animation_key += 1
+
+    def finish_prediction(self):
+        self.predict_post()
+        self.is_animating = False
+
 
 
 
@@ -177,6 +210,7 @@ def main_page() -> rx.Component:
                 font_size="5em",
                 style = {"font_family":"Lato"},
                 margin_bottom="20px",
+                margin_top = "20px",
                 color="black",
             ),
             rx.text(
@@ -272,61 +306,61 @@ def main_page() -> rx.Component:
                     ),
                     spacing="3",
                 ),
-                rx.hstack(
-                    rx.box(
-                        rx.text(
-                            State.output_label,
-                            font_size="2.5em",
-                            font_weight="bold",
-                            color="black",
-                        ),
-                        width="600px",
-                        height="150px",
-                        border="3px solid",
-                        border_color="bronze",
-                        background_color="lightgray",
-                        padding="10px",
-                        display="flex",
-                        align_items="center",
-                        justify_content="center",
-                        text_align="center",
-                    ),
-                    rx.image(
-                    src="/ChatGPT Image May 12, 2025 at 07_52_42 PM.png",
-                    alt="Page not found image",
-                    width="400px",
-                    height="auto",
-                    border_radius="xl",
-                    style={"background_color":"transparent"},  
-                ),
-                    spacing="3",
-                ),
                 rx.box(
+                    rx.text(
+                        State.output_label,
+                        font_size="2.5em",
+                        font_weight="bold",
+                        color="black",
+                    ),
+                    width="600px",
+                    height="150px",
+                    border="3px solid",
+                    border_color="bronze",
+                    background_color="lightgray",
+                    padding="10px",
+                    display="flex",
+                    align_items="center",
+                    justify_content="center",
+                    text_align="center",
+                    margin_bottom="24px",
+                ),
+                rx.center(
+                    rx.image(
+                        src=State.image_src,
+                        alt="Result image",
+                        width="400px",
+                        height="auto",
+                        border_radius="xl",
+                        style={"background_color": "transparent"},
+                    ),
+                ),
+                rx.center(
                     rx.link(
                         rx.button(
                             "Back to Home",
                             color_scheme="bronze",
                             style={
-                            "font_family": "Lato",
-                            "background_color": "#D9863B",
-                            "color": "white",
-                            "border_radius": "8px",
-                        },),
+                                "font_family": "Lato",
+                                "background_color": "#D9863B",
+                                "color": "white",
+                                "border_radius": "8px",
+                            },
+                        ),
                         href="/",
                         is_external=False,
                     ),
                 ),
-                spacing="5",
+                spacing="4",
+                align_items="center",
             ),
-            spacing="3",
+            width="100vw",
+            height="100vh",
+            background="linear-gradient(to right, #EAE4D9, #6E5841)",
+            justify_content="center",
             align_items="center",
-        ),
-        width="100vw",
-        height="100vh",
-        background="linear-gradient(to right, #EAE4D9, #6E5841)",
-        justify_content="center",
-        align_items="center",
-        display="flex",
+            display="flex",
+        )
     )
 
 
