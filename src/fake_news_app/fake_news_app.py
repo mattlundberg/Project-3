@@ -15,6 +15,7 @@ class State(rx.State):
     submit_phrase: str | None = None
     animation_key: int = 0
     image_src: str = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"  # default image
+    is_animating: bool = False
 
 
     submit_phrases = [
@@ -120,6 +121,18 @@ class State(rx.State):
     def submit_and_predict(self):
         self.set_random_phrase()
         self.predict_post()
+
+    def start_animation(self):
+        self.set_random_phrase()
+        self.is_animating = True
+        self.output_label = ""
+        self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+        self.animation_key += 1
+
+    def finish_prediction(self):
+        self.predict_post()
+        self.is_animating = False
+
 
 
 
