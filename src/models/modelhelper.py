@@ -1,10 +1,15 @@
-import tensorflow as tf
+# Standard library imports
 import os
-from typing import Optional, List, Dict, Any, Union, Tuple
-import numpy as np
+import re
 import datetime
-import tensorboard as notebook
+from typing import Optional, List, Dict, Any, Union, Tuple
+
+# Third party imports
+import numpy as np
 import pandas as pd
+import tensorflow as tf
+from sklearn.preprocessing import normalize
+import tensorboard as notebook
 
 class ModelHelper:
     """Helper class for managing TensorFlow models"""
@@ -18,15 +23,23 @@ class ModelHelper:
         """
         self.truthfulness_columns = ['barely_true_counts', 'pants_on_fire_counts', 'mostly_true_counts', 'half_true_counts', 'false_counts']
         self.model_dir = model_dir
+        self.vectorizer = None  # Will store the trained TextVectorization layer
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
 
-    def normalize_counts(self, df):
+    def normalize_counts(self, df: pd.DataFrame) -> np.ndarray:
+        """
+        Normalize truthfulness counts using sklearn's preprocessing.
+        
+        Args:
+            df: DataFrame containing truthfulness columns
+            
+        Returns:
+            Normalized counts as numpy array
+        """
         counts = df[self.truthfulness_columns].values
-        row_sums = counts.sum(axis=1, keepdims=True)
-        # Avoid division by zero
-        row_sums[row_sums == 0] = 1
-        return counts / row_sums      
+        # L1 normalization (sum of values = 1) with built-in zero handling
+        return normalize(counts, norm='l1', axis=1)
       
     def prepare_datasets(
         self,
@@ -67,7 +80,7 @@ class ModelHelper:
             
     def create_text_classification_model(self,
                                        vocab_size: int,
-                                       embedding_dim: int = 300,  # Increased for better word representation
+                                       embedding_dim: int = 400,  # Increased for better word representation
                                        max_sequence_length: int = 200,
                                        num_classes: int = 5) -> tf.keras.Model:
         """
@@ -82,47 +95,63 @@ class ModelHelper:
         Returns:
             Compiled TensorFlow model
         """
+        # Initialize a sequential model for text classification
         model = tf.keras.Sequential([
-            # Input layer for text sequences
+            # Input layer that accepts sequences of integers (word indices) of fixed length
+            # Shape: (batch_size, max_sequence_length)
             tf.keras.layers.Input(shape=(max_sequence_length,), dtype=tf.float32),
             
-            # Embedding layer with stronger regularization
+            # Embedding layer converts integer indices to dense vectors of size embedding_dim
+            # L2 regularization helps prevent overfitting by penalizing large weights
+            # Shape: (batch_size, max_sequence_length, embedding_dim) 
             tf.keras.layers.Embedding(vocab_size, embedding_dim,
                                     embeddings_regularizer=tf.keras.regularizers.l2(0.001)),
             
-            # Multiple Conv1D layers with different kernel sizes to capture various n-gram patterns
+            # Parallel CNN layers to capture different n-gram patterns:
+            # 3-gram patterns (local features spanning 3 words)
+            # Shape: (batch_size, max_sequence_length, 256)
             tf.keras.layers.Conv1D(256, 3, activation='relu', padding='same'),
-            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.BatchNormalization(),  # Normalize activations for stable training
+            
+            # 5-gram patterns (medium-range features spanning 5 words) 
             tf.keras.layers.Conv1D(256, 5, activation='relu', padding='same'),
             tf.keras.layers.BatchNormalization(),
+            
+            # 7-gram patterns (longer-range features spanning 7 words)
             tf.keras.layers.Conv1D(256, 7, activation='relu', padding='same'),
             tf.keras.layers.BatchNormalization(),
             
-            # Concatenate the different n-gram features
-            #tf.keras.layers.Concatenate(),
-            
-            # Bidirectional LSTM with more units and return sequences
+            # First Bidirectional LSTM processes sequences in both directions
+            # return_sequences=True keeps temporal dimension for next layer
+            # Shape: (batch_size, max_sequence_length, 2*128)
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128, return_sequences=True)),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dropout(0.3),  # Randomly drop 30% of units to prevent overfitting
             
-            # Second Bidirectional LSTM layer
+            # Second Bidirectional LSTM layer for higher-level sequence features
+            # Shape: (batch_size, 2*64)
             tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.3),
             
-            # Dense layers with residual connections
+            # Dense layers for high-level feature extraction
+            # L2 regularization on weights helps prevent overfitting
+            # Shape: (batch_size, 256)
             tf.keras.layers.Dense(256, activation='relu',
                                 kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.3),
             
+            # Second dense layer further reduces dimensionality
+            # Shape: (batch_size, 128) 
             tf.keras.layers.Dense(128, activation='relu',
                                 kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.3),
             
-            # Output layer with 5 neurons for 5 truthfulness categories
+            # Final output layer with softmax activation for multi-class classification
+            # Shape: (batch_size, num_classes)
+            # Each output represents probability of text belonging to that truthfulness category
             tf.keras.layers.Dense(num_classes, activation='softmax')
         ])
         
@@ -134,7 +163,7 @@ class ModelHelper:
             decay_rate=0.9,
             staircase=True)
         
-        optimizer = tf.keras.optimizers.Adam()
+        optimizer = tf.keras.optimizers.AdamW(learning_rate=initial_learning_rate)
         
         model.compile(
             optimizer=optimizer,
@@ -147,62 +176,112 @@ class ModelHelper:
         
         return model
         
+    def _clean_text(self, text: str) -> str:
+        """
+        Clean text by removing non-letter characters and converting to lowercase.
+        
+        Args:
+            text: Input text string
+            
+        Returns:
+            Cleaned text string
+        """
+        if not isinstance(text, str):
+            text = str(text)
+        return re.sub(r'[^a-zA-Z\s ]', '', text.lower())
+
+    def create_vectorizer(self, texts: List[str], max_tokens: int = 10000, 
+                         max_sequence_length: int = 200) -> None:
+        """
+        Create and fit a TextVectorization layer on the training data.
+        
+        Args:
+            texts: List of text strings to fit the vectorizer on
+            max_tokens: Maximum number of tokens in the vocabulary
+            max_sequence_length: Maximum length of sequences
+        """
+        # Clean texts first
+        cleaned_texts = [self._clean_text(text) for text in texts]
+        
+        # Create and fit the vectorizer
+        self.vectorizer = tf.keras.layers.TextVectorization(
+            max_tokens=max_tokens,
+            output_mode='int',
+            output_sequence_length=max_sequence_length
+        )
+        self.vectorizer.adapt(cleaned_texts)
+
+    def save_vectorizer(self, filepath: str) -> None:
+        """
+        Save the trained TextVectorization layer to a file.
+        
+        Args:
+            filepath: Path where the vectorizer will be saved
+            
+        Raises:
+            ValueError: If vectorizer hasn't been trained yet
+        """
+        if self.vectorizer is None:
+            raise ValueError("Vectorizer not trained. Call create_vectorizer first.")
+            
+        # Create a model containing just the vectorizer layer
+        vectorizer_model = tf.keras.Sequential([self.vectorizer])
+        
+        # Save the model containing the vectorizer
+        vectorizer_model.save(filepath, save_format='tf')
+
+    def load_vectorizer(self, filepath: str) -> None:
+        """
+        Load a previously saved TextVectorization layer from a file.
+        
+        Args:
+            filepath: Path to the saved vectorizer file
+            
+        Raises:
+            FileNotFoundError: If the vectorizer file doesn't exist
+        """
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"No vectorizer found at {filepath}")
+            
+        # Load the model containing the vectorizer
+        loaded_model = tf.keras.models.load_model(filepath)
+        
+        # Extract the vectorizer layer
+        self.vectorizer = loaded_model.layers[0]
+
     def preprocess_text(self,
                        texts: Union[str, List[str]],
-                       max_sequence_length: int = 200,
                        return_tokens: bool = False) -> Union[np.ndarray, List[str]]:
         """
-        Preprocess text data for model input with cleaning and tokenization options.
+        Preprocess text data using the trained vectorizer.
         
         Args:
             texts: Single text string or list of text strings
-            max_sequence_length: Maximum length of sequences
             return_tokens: If True, returns cleaned tokens instead of vectorized sequences
             
         Returns:
             If return_tokens is False: Vectorized text data as numpy array
             If return_tokens is True: List of cleaned tokens
             
-        Example:
-            >>> preprocess_text("Hey @user123! Check out #AI", return_tokens=True)
-            ['hey', 'user', 'check', 'out', 'ai']
-            >>> preprocess_text(["Hey @user123!", "Check out #AI"])
-            array([[1, 2, 3], [4, 5, 6]])  # Vectorized sequences
+        Raises:
+            ValueError: If vectorizer hasn't been trained yet
         """
-        import re
+        if self.vectorizer is None and not return_tokens:
+            raise ValueError("Vectorizer not trained. Call create_vectorizer first.")
         
         # Convert single string to list for consistent processing
         if isinstance(texts, str):
             texts = [texts]
             
-        # Clean text using lambda function to keep only letters and spaces
-        clean_text = lambda x: re.sub(r'[^a-zA-Z\s ]', '', str(x))
-        
-        # Clean and tokenize texts
-        cleaned_texts = []
-        for text in texts:
-            # Ensure text is a string and clean it
-            if not isinstance(text, str):
-                text = str(text)
-            cleaned_text = clean_text(text.lower())
-            cleaned_texts.append(cleaned_text)
+        # Clean texts
+        cleaned_texts = [self._clean_text(text) for text in texts]
             
         if return_tokens:
             # Return cleaned tokens
             return [token for text in cleaned_texts for token in text.split() if token]
             
-        # Create text vectorization layer
-        vectorize_layer = tf.keras.layers.TextVectorization(
-            max_tokens=10000,
-            output_mode='int',
-            output_sequence_length=max_sequence_length
-        )
-        
-        # Adapt the layer to the cleaned texts
-        vectorize_layer.adapt(cleaned_texts)
-        
-        # Vectorize the texts and ensure correct shape
-        sequences = vectorize_layer(cleaned_texts)
+        # Use the trained vectorizer
+        sequences = self.vectorizer(cleaned_texts)
         return tf.cast(sequences, tf.float32)  # Convert to float32 for model input
         
     def create_model(self, 
@@ -270,7 +349,7 @@ class ModelHelper:
         
     def save_model(self, model: tf.keras.Model, filename: str) -> bool:
         """
-        Save a TensorFlow model to disk
+        Save a TensorFlow model and its associated vectorizer to disk
         
         Args:
             model: The TensorFlow model to save
@@ -278,13 +357,24 @@ class ModelHelper:
             
         Returns:
             bool: True if save successful, False otherwise
+            
+        Raises:
+            ValueError: If vectorizer hasn't been trained yet
         """
         try:
             # Ensure filename has .keras extension
             if not filename.endswith('.keras'):
                 filename = f"{filename}.keras"
-            filepath = os.path.join(self.model_dir, filename)
-            model.save(filepath)
+            model_path = os.path.join(self.model_dir, filename)
+            
+            # Save the model
+            model.save(model_path)
+            
+            # Save the vectorizer if it exists
+            if self.vectorizer is not None:
+                vectorizer_path = os.path.join(self.model_dir, 'vectorizer.keras')
+                self.save_vectorizer(vectorizer_path)
+            
             return True
         except Exception as e:
             print(f"Error saving model: {str(e)}")
@@ -292,17 +382,28 @@ class ModelHelper:
             
     def load_model(self, filename: str) -> Optional[tf.keras.Model]:
         """
-        Load a TensorFlow model from disk
+        Load a TensorFlow model and its associated vectorizer from disk
         
         Args:
-            filename: Name of the file to load the model from
+            filename: Name of the file to load the model from (without extension)
             
         Returns:
             The loaded TensorFlow model if successful, None otherwise
+            
+        Raises:
+            FileNotFoundError: If either the model or vectorizer file doesn't exist
         """
         try:
-            filepath = os.path.join(self.model_dir, filename)
-            model = tf.keras.models.load_model(filepath)
+            # Load the model
+            model_path = os.path.join(self.model_dir, f"{filename}.keras")
+            if not os.path.exists(model_path):
+                raise FileNotFoundError(f"No model found at {model_path}")
+            model = tf.keras.models.load_model(model_path)
+            
+            # Load the vectorizer
+            vectorizer_path = os.path.join(self.model_dir, 'vectorizer.keras')
+            self.load_vectorizer(vectorizer_path)
+            
             return model
         except Exception as e:
             print(f"Error loading model: {str(e)}")
@@ -437,13 +538,17 @@ class ModelHelper:
         
     def list_models(self) -> List[str]:
         """
-        List all saved models
+        List all saved models in the model directory
         
         Returns:
-            List of model names
+            List of model names (without .keras extension)
         """
         try:
-            return [f for f in os.listdir(self.model_dir) if os.path.isdir(os.path.join(self.model_dir, f))]
+            # Get all .keras files in the model directory
+            model_files = [f for f in os.listdir(self.model_dir) 
+                          if f.endswith('.keras') and f != 'vectorizer.keras']
+            # Remove the .keras extension from the filenames
+            return [os.path.splitext(f)[0] for f in model_files]
         except Exception as e:
             print(f"Error listing models: {str(e)}")
             return []
