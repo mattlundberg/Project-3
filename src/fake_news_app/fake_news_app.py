@@ -14,6 +14,8 @@ class State(rx.State):
     output_label: str = ""
     submit_phrase: str | None = None
     animation_key: int = 0
+    image_src: str = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"  # default image
+
 
     submit_phrases = [
         "Feeding Fake News Hamsters...",
@@ -75,6 +77,7 @@ class State(rx.State):
         self.submit_phrase = None 
         self.animation_key = 0
         self.output_label = ""
+        self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
 
     @rx.var
     def submit_sequence(self) -> list:
@@ -108,6 +111,11 @@ class State(rx.State):
             self.output_label = f"Probably True 📰"
         else:
             self.output_label = f"Result: {max_index}\nScore: {max_value:.2f}"
+        
+        if max_index == 3:
+            self.image_src = "/ChatGPT Image May 12, 2025 at 08_24_16 PM.png"
+        else:
+            self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
 
     def submit_and_predict(self):
         self.set_random_phrase()
@@ -212,7 +220,6 @@ def main_page() -> rx.Component:
                         border="3px solid",
                         border_color="bronze",
                         font = "Lato",
-                        font_size="1em",
                         resize="none",
                         on_change=State.set_post_text,
                     ),
@@ -307,8 +314,8 @@ def main_page() -> rx.Component:
                 ),
                 rx.center(
                     rx.image(
-                        src="/ChatGPT Image May 12, 2025 at 07_52_42 PM.png",
-                        alt="Page not found image",
+                        src=State.image_src,
+                        alt="Result image",
                         width="400px",
                         height="auto",
                         border_radius="xl",
