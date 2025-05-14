@@ -96,29 +96,51 @@ class ModelHelper:
             # Input layer for sentence embeddings (384 dimensions from all-MiniLM-L6-v2)
             tf.keras.layers.Input(shape=(384,), dtype=tf.float32),
             
-            # Dense layers for feature extraction
+            # First dense layer with residual connection
+            tf.keras.layers.Dense(768, activation='relu',
+                                kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.3),
+            
+            # Second dense layer with residual connection
             tf.keras.layers.Dense(512, activation='relu',
-                                kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+                                kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.4),
+            tf.keras.layers.Dropout(0.3),
             
+            # Third dense layer
             tf.keras.layers.Dense(256, activation='relu',
-                                kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+                                kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.4),
+            tf.keras.layers.Dropout(0.3),
             
+            # Fourth dense layer
             tf.keras.layers.Dense(128, activation='relu',
-                                kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+                                kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.4),
+            tf.keras.layers.Dropout(0.3),
             
-            # Final output layer with softmax activation for multi-class classification
+            # Final output layer with softmax activation
             tf.keras.layers.Dense(num_classes, activation='softmax')
         ])
         
-        # Use a lower learning rate for fine-tuning
-        initial_learning_rate = 0.0001
-        optimizer = tf.keras.optimizers.AdamW(learning_rate=initial_learning_rate)
+        # Use a lower learning rate with cosine decay
+        initial_learning_rate = 0.0005
+        lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
+            initial_learning_rate,
+            first_decay_steps=1000,
+            t_mul=2.0,
+            m_mul=0.9,
+            alpha=0.0001
+        )
+        
+        optimizer = tf.keras.optimizers.AdamW(
+            learning_rate=lr_schedule,
+            weight_decay=0.0001,
+            beta_1=0.9,
+            beta_2=0.999,
+            epsilon=1e-07
+        )
         
         model.compile(
             optimizer=optimizer,
@@ -377,30 +399,6 @@ class ModelHelper:
         log_dir = os.path.join(self.model_dir, 'logs', 'fit', 
                           datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
         os.makedirs(log_dir, exist_ok=True) 
-
-        if callbacks is None:
-            callbacks = [
-                tf.keras.callbacks.EarlyStopping(
-                    monitor='val_loss',
-                    patience=5,
-                    restore_best_weights=True,
-                    mode='min'
-                ),
-                tf.keras.callbacks.ReduceLROnPlateau(
-                    monitor='val_loss',
-                    factor=0.2,
-                    patience=3,
-                    min_lr=1e-6,
-                    mode='min'
-                ),
-                tf.keras.callbacks.TensorBoard(
-                    log_dir=log_dir,
-                    histogram_freq=1,
-                    write_graph=True,
-                    write_images=True,
-                    update_freq='epoch',
-                )
-            ]
             
         history = model.fit(
             train_data,
