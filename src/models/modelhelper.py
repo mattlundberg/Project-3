@@ -10,6 +10,7 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import normalize
 import tensorboard as notebook
+from sentence_transformers import SentenceTransformer
 
 class ModelHelper:
     """Helper class for managing TensorFlow models"""
@@ -24,6 +25,7 @@ class ModelHelper:
         self.truthfulness_columns = ['barely_true_counts', 'pants_on_fire_counts', 'mostly_true_counts', 'half_true_counts', 'false_counts']
         self.model_dir = model_dir
         self.vectorizer = None  # Will store the trained TextVectorization layer
+        self.sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2')
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
 
@@ -79,17 +81,11 @@ class ModelHelper:
         return train_dataset, val_dataset, test_dataset
             
     def create_text_classification_model(self,
-                                       vocab_size: int,
-                                       embedding_dim: int = 400,  # Increased for better word representation
-                                       max_sequence_length: int = 200,
                                        num_classes: int = 5) -> tf.keras.Model:
         """
-        Create a model for text classification with 5 truthfulness categories
+        Create a model for text classification with 5 truthfulness categories using sentence embeddings
         
         Args:
-            vocab_size: Size of the vocabulary
-            embedding_dim: Dimension of the embedding layer
-            max_sequence_length: Maximum length of input sequences
             num_classes: Number of output classes (5 for truthfulness categories)
             
         Returns:
@@ -97,72 +93,31 @@ class ModelHelper:
         """
         # Initialize a sequential model for text classification
         model = tf.keras.Sequential([
-            # Input layer that accepts sequences of integers (word indices) of fixed length
-            # Shape: (batch_size, max_sequence_length)
-            tf.keras.layers.Input(shape=(max_sequence_length,), dtype=tf.float32),
+            # Input layer for sentence embeddings (384 dimensions from all-MiniLM-L6-v2)
+            tf.keras.layers.Input(shape=(384,), dtype=tf.float32),
             
-            # Embedding layer converts integer indices to dense vectors of size embedding_dim
-            # L2 regularization helps prevent overfitting by penalizing large weights
-            # Shape: (batch_size, max_sequence_length, embedding_dim) 
-            tf.keras.layers.Embedding(vocab_size, embedding_dim,
-                                    embeddings_regularizer=tf.keras.regularizers.l2(0.001)),
-            
-            # Parallel CNN layers to capture different n-gram patterns:
-            # 3-gram patterns (local features spanning 3 words)
-            # Shape: (batch_size, max_sequence_length, 256)
-            tf.keras.layers.Conv1D(256, 3, activation='relu', padding='same'),
-            tf.keras.layers.BatchNormalization(),  # Normalize activations for stable training
-            
-            # 5-gram patterns (medium-range features spanning 5 words) 
-            tf.keras.layers.Conv1D(256, 5, activation='relu', padding='same'),
+            # Dense layers for feature extraction
+            tf.keras.layers.Dense(512, activation='relu',
+                                kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.4),
             
-            # 7-gram patterns (longer-range features spanning 7 words)
-            tf.keras.layers.Conv1D(256, 7, activation='relu', padding='same'),
-            tf.keras.layers.BatchNormalization(),
-            
-            # First Bidirectional LSTM processes sequences in both directions
-            # return_sequences=True keeps temporal dimension for next layer
-            # Shape: (batch_size, max_sequence_length, 2*128)
-            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128, return_sequences=True)),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.3),  # Randomly drop 30% of units to prevent overfitting
-            
-            # Second Bidirectional LSTM layer for higher-level sequence features
-            # Shape: (batch_size, 2*64)
-            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.3),
-            
-            # Dense layers for high-level feature extraction
-            # L2 regularization on weights helps prevent overfitting
-            # Shape: (batch_size, 256)
             tf.keras.layers.Dense(256, activation='relu',
                                 kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dropout(0.4),
             
-            # Second dense layer further reduces dimensionality
-            # Shape: (batch_size, 128) 
             tf.keras.layers.Dense(128, activation='relu',
                                 kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dropout(0.4),
             
             # Final output layer with softmax activation for multi-class classification
-            # Shape: (batch_size, num_classes)
-            # Each output represents probability of text belonging to that truthfulness category
             tf.keras.layers.Dense(num_classes, activation='softmax')
         ])
         
-        # Compile model with adjusted learning rate schedule
-        initial_learning_rate = 0.001
-        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate,
-            decay_steps=1000,
-            decay_rate=0.9,
-            staircase=True)
-        
+        # Use a lower learning rate for fine-tuning
+        initial_learning_rate = 0.0001
         optimizer = tf.keras.optimizers.AdamW(learning_rate=initial_learning_rate)
         
         model.compile(
@@ -253,36 +208,33 @@ class ModelHelper:
                        texts: Union[str, List[str]],
                        return_tokens: bool = False) -> Union[np.ndarray, List[str]]:
         """
-        Preprocess text data using the trained vectorizer.
+        Preprocess text data using the sentence transformer.
         
         Args:
             texts: Single text string or list of text strings
-            return_tokens: If True, returns cleaned tokens instead of vectorized sequences
+            return_tokens: If True, returns cleaned tokens instead of encoded sequences
             
         Returns:
-            If return_tokens is False: Vectorized text data as numpy array
+            If return_tokens is False: Encoded text data as numpy array
             If return_tokens is True: List of cleaned tokens
-            
-        Raises:
-            ValueError: If vectorizer hasn't been trained yet
         """
-        if self.vectorizer is None and not return_tokens:
-            raise ValueError("Vectorizer not trained. Call create_vectorizer first.")
-        
         # Convert single string to list for consistent processing
         if isinstance(texts, str):
             texts = [texts]
-            
+        
         # Clean texts
         cleaned_texts = [self._clean_text(text) for text in texts]
-            
+        
         if return_tokens:
             # Return cleaned tokens
             return [token for text in cleaned_texts for token in text.split() if token]
-            
-        # Use the trained vectorizer
-        sequences = self.vectorizer(cleaned_texts)
-        return tf.cast(sequences, tf.float32)  # Convert to float32 for model input
+        
+        # Use sentence transformer to encode the texts
+        # This will return a numpy array of shape (n_texts, embedding_dim)
+        encoded_texts = self.sentence_transformer.encode(cleaned_texts, 
+                                                       convert_to_tensor=False,
+                                                       show_progress_bar=False)
+        return encoded_texts
         
     def create_model(self, 
                     input_shape: tuple,
@@ -369,12 +321,6 @@ class ModelHelper:
             
             # Save the model
             model.save(model_path)
-            
-            # Save the vectorizer if it exists
-            if self.vectorizer is not None:
-                vectorizer_path = os.path.join(self.model_dir, 'vectorizer.keras')
-                self.save_vectorizer(vectorizer_path)
-            
             return True
         except Exception as e:
             print(f"Error saving model: {str(e)}")
@@ -399,10 +345,6 @@ class ModelHelper:
             if not os.path.exists(model_path):
                 raise FileNotFoundError(f"No model found at {model_path}")
             model = tf.keras.models.load_model(model_path)
-            
-            # Load the vectorizer
-            vectorizer_path = os.path.join(self.model_dir, 'vectorizer.keras')
-            self.load_vectorizer(vectorizer_path)
             
             return model
         except Exception as e:
