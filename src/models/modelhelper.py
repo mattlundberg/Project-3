@@ -90,59 +90,63 @@ class ModelHelper:
         # Input normalization
         x = tf.keras.layers.LayerNormalization()(inputs)
         
-        # First dense block with residual connection
-        residual = x
-        x = tf.keras.layers.Dense(384, activation=None,
-                            kernel_regularizer=tf.keras.regularizers.l2(0.001))(x)
+        # Wider initial layer to increase model capacity
+        x = tf.keras.layers.Dense(768, activation=None)(x)
         x = tf.keras.layers.LayerNormalization()(x)
         x = tf.keras.layers.Activation('gelu')(x)
-        x = tf.keras.layers.Dropout(0.1)(x)
-        x = tf.keras.layers.Add()([x, residual])
+        x = tf.keras.layers.Dropout(0.2)(x)
         
-        # Second dense block with residual connection
-        residual = x
-        x = tf.keras.layers.Dense(384, activation=None,
-                            kernel_regularizer=tf.keras.regularizers.l2(0.001))(x)
+        # Attention mechanism to focus on important features
+        attention = tf.keras.layers.Dense(768, activation='sigmoid')(x)
+        x = tf.keras.layers.Multiply()([x, attention])
+        
+        # Progressive dimension reduction
+        x = tf.keras.layers.Dense(512, activation=None)(x)
         x = tf.keras.layers.LayerNormalization()(x)
         x = tf.keras.layers.Activation('gelu')(x)
-        x = tf.keras.layers.Dropout(0.1)(x)
-        x = tf.keras.layers.Add()([x, residual])
+        x = tf.keras.layers.Dropout(0.2)(x)
         
-        # Classification head
-        x = tf.keras.layers.Dense(128, activation='gelu')(x)
-        x = tf.keras.layers.Dropout(0.1)(x)
-        outputs = tf.keras.layers.Dense(num_classes, activation='softmax')(x)
+        x = tf.keras.layers.Dense(256, activation=None)(x)
+        x = tf.keras.layers.LayerNormalization()(x)
+        x = tf.keras.layers.Activation('gelu')(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
+        
+        # Final classification layer with bias initializer
+        outputs = tf.keras.layers.Dense(
+            num_classes,
+            activation='softmax',
+            kernel_initializer='glorot_uniform',
+            bias_initializer=tf.keras.initializers.Constant(0.1)
+        )(x)
         
         # Create model
         model = tf.keras.Model(inputs=inputs, outputs=outputs)
         
-        # Learning rate schedule with warmup and cosine decay
-        total_steps = 10000  # Adjust based on your dataset size and epochs
-        warmup_steps = 1000
-        initial_learning_rate = 0.0001
-        
-        lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
+        # Learning rate schedule
+        initial_learning_rate = 0.0005
+        lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
             initial_learning_rate,
-            first_decay_steps=total_steps,
-            t_mul=2.0,
-            m_mul=0.9,
+            decay_steps=10000,
             alpha=0.0001
         )
         
-        # Optimizer with gradient clipping
+        # Optimizer with gradient clipping and higher epsilon
         optimizer = tf.keras.optimizers.AdamW(
             learning_rate=lr_schedule,
-            weight_decay=0.001,
+            weight_decay=0.0001,  # Reduced weight decay
             beta_1=0.9,
             beta_2=0.999,
-            epsilon=1e-7,
-            clipnorm=1.0  # Add gradient clipping
+            epsilon=1e-6,
+            clipnorm=1.0
         )
         
-        # Compile with label smoothing
+        # Compile with focal loss to handle class imbalance
         model.compile(
             optimizer=optimizer,
-            loss=tf.keras.losses.CategoricalCrossentropy(label_smoothing=0.1),
+            loss=tf.keras.losses.CategoricalFocalCrossentropy(
+                alpha=0.25,
+                gamma=2.0
+            ),
             metrics=['accuracy',
                     tf.keras.metrics.CategoricalAccuracy(),
                     tf.keras.metrics.AUC(multi_label=True),
@@ -372,25 +376,25 @@ class ModelHelper:
             print(f"Error loading model: {str(e)}")
             return None
             
-    def train_model(self, model, train_data, validation_data=None, epochs=50, batch_size=32, callbacks=None):
+    def train_model(self, model, train_data, validation_data=None, epochs=100, batch_size=16, callbacks=None):
         if callbacks is None:
             callbacks = []
         
         # Add early stopping with longer patience
         callbacks.append(tf.keras.callbacks.EarlyStopping(
             monitor='val_loss',
-            patience=10,
+            patience=15,
             restore_best_weights=True,
-            min_delta=0.001
+            min_delta=0.0001
         ))
         
         # More gradual learning rate reduction
         callbacks.append(tf.keras.callbacks.ReduceLROnPlateau(
             monitor='val_loss',
-            factor=0.2,
-            patience=5,
-            min_lr=1e-6,
-            min_delta=0.001
+            factor=0.1,
+            patience=7,
+            min_lr=1e-7,
+            min_delta=0.0001
         ))
         
         # Add model checkpoint
@@ -402,24 +406,16 @@ class ModelHelper:
         ))
         
         # Calculate class weights
-        if hasattr(train_data, 'class_counts'):
-            total = sum(train_data.class_counts.values())
+        try:
+            y_train = np.concatenate([y for x, y in train_data], axis=0)
+            class_counts = np.sum(y_train, axis=0)
+            total = np.sum(class_counts)
             class_weights = {
-                cls: total / (len(train_data.class_counts) * count)
-                for cls, count in train_data.class_counts.items()
+                i: (total / (len(class_counts) * count)) ** 0.5  # Square root to reduce extreme weights
+                for i, count in enumerate(class_counts)
             }
-        else:
-            # Try to compute class weights from the labels
-            try:
-                y_train = np.concatenate([y for x, y in train_data], axis=0)
-                class_counts = np.sum(y_train, axis=0)
-                total = np.sum(class_counts)
-                class_weights = {
-                    i: total / (len(class_counts) * count)
-                    for i, count in enumerate(class_counts)
-                }
-            except:
-                class_weights = None
+        except:
+            class_weights = None
         
         history = model.fit(
             train_data,
