@@ -80,75 +80,74 @@ class ModelHelper:
         
         return train_dataset, val_dataset, test_dataset
             
-    def create_text_classification_model(self,
-                                       num_classes: int = 5) -> tf.keras.Model:
+    def create_text_classification_model(self, num_classes: int = 3) -> tf.keras.Model:
         """
-        Create a model for text classification with 5 truthfulness categories using sentence embeddings
-        
-        Args:
-            num_classes: Number of output classes (5 for truthfulness categories)
-            
-        Returns:
-            Compiled TensorFlow model
+        Create a model for text classification using sentence embeddings
         """
-        # Initialize a sequential model for text classification
-        model = tf.keras.Sequential([
-            # Input layer for sentence embeddings (384 dimensions from all-MiniLM-L6-v2)
-            tf.keras.layers.Input(shape=(384,), dtype=tf.float32),
-            
-            # First dense layer with residual connection
-            tf.keras.layers.Dense(768, activation='relu',
-                                kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.3),
-            
-            # Second dense layer with residual connection
-            tf.keras.layers.Dense(512, activation='relu',
-                                kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.3),
-            
-            # Third dense layer
-            tf.keras.layers.Dense(256, activation='relu',
-                                kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.3),
-            
-            # Fourth dense layer
-            tf.keras.layers.Dense(128, activation='relu',
-                                kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.3),
-            
-            # Final output layer with softmax activation
-            tf.keras.layers.Dense(num_classes, activation='softmax')
-        ])
+        # Define the input layer
+        inputs = tf.keras.layers.Input(shape=(384,), dtype=tf.float32)
         
-        # Use a lower learning rate with cosine decay
-        initial_learning_rate = 0.0005
+        # Input normalization
+        x = tf.keras.layers.LayerNormalization()(inputs)
+        
+        # First dense block with residual connection
+        residual = x
+        x = tf.keras.layers.Dense(384, activation=None,
+                            kernel_regularizer=tf.keras.regularizers.l2(0.001))(x)
+        x = tf.keras.layers.LayerNormalization()(x)
+        x = tf.keras.layers.Activation('gelu')(x)
+        x = tf.keras.layers.Dropout(0.1)(x)
+        x = tf.keras.layers.Add()([x, residual])
+        
+        # Second dense block with residual connection
+        residual = x
+        x = tf.keras.layers.Dense(384, activation=None,
+                            kernel_regularizer=tf.keras.regularizers.l2(0.001))(x)
+        x = tf.keras.layers.LayerNormalization()(x)
+        x = tf.keras.layers.Activation('gelu')(x)
+        x = tf.keras.layers.Dropout(0.1)(x)
+        x = tf.keras.layers.Add()([x, residual])
+        
+        # Classification head
+        x = tf.keras.layers.Dense(128, activation='gelu')(x)
+        x = tf.keras.layers.Dropout(0.1)(x)
+        outputs = tf.keras.layers.Dense(num_classes, activation='softmax')(x)
+        
+        # Create model
+        model = tf.keras.Model(inputs=inputs, outputs=outputs)
+        
+        # Learning rate schedule with warmup and cosine decay
+        total_steps = 10000  # Adjust based on your dataset size and epochs
+        warmup_steps = 1000
+        initial_learning_rate = 0.0001
+        
         lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
             initial_learning_rate,
-            first_decay_steps=1000,
+            first_decay_steps=total_steps,
             t_mul=2.0,
             m_mul=0.9,
             alpha=0.0001
         )
         
+        # Optimizer with gradient clipping
         optimizer = tf.keras.optimizers.AdamW(
             learning_rate=lr_schedule,
-            weight_decay=0.0001,
+            weight_decay=0.001,
             beta_1=0.9,
             beta_2=0.999,
-            epsilon=1e-07
+            epsilon=1e-7,
+            clipnorm=1.0  # Add gradient clipping
         )
         
+        # Compile with label smoothing
         model.compile(
             optimizer=optimizer,
-            loss='categorical_crossentropy',
-            metrics=['accuracy', 
-                    tf.keras.metrics.CategoricalAccuracy(name='categorical_accuracy'),
-                    tf.keras.metrics.Precision(name='precision', class_id=None),
-                    tf.keras.metrics.Recall(name='recall', class_id=None)]
+            loss=tf.keras.losses.CategoricalCrossentropy(label_smoothing=0.1),
+            metrics=['accuracy',
+                    tf.keras.metrics.CategoricalAccuracy(),
+                    tf.keras.metrics.AUC(multi_label=True),
+                    tf.keras.metrics.Precision(),
+                    tf.keras.metrics.Recall()]
         )
         
         return model
@@ -373,39 +372,62 @@ class ModelHelper:
             print(f"Error loading model: {str(e)}")
             return None
             
-    def train_model(self,
-                   model: tf.keras.Model,
-                   train_data: tf.data.Dataset,
-                   validation_data: Optional[tf.data.Dataset] = None,
-                   epochs: int = 10,
-                   batch_size: int = 32,
-                   callbacks: List[tf.keras.callbacks.Callback] = None) -> tf.keras.callbacks.History:
-        """
-        Train a TensorFlow model
+    def train_model(self, model, train_data, validation_data=None, epochs=50, batch_size=32, callbacks=None):
+        if callbacks is None:
+            callbacks = []
         
-        Args:
-            model: Model to train
-            train_data: Training dataset
-            validation_data: Optional validation dataset
-            epochs: Number of training epochs
-            batch_size: Batch size for training
-            callbacks: List of callbacks to use during training
-            
-        Returns:
-            Training history
-        """
-
-        # Create a TensorBoard callback
-        log_dir = os.path.join(self.model_dir, 'logs', 'fit', 
-                          datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-        os.makedirs(log_dir, exist_ok=True) 
-            
+        # Add early stopping with longer patience
+        callbacks.append(tf.keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=10,
+            restore_best_weights=True,
+            min_delta=0.001
+        ))
+        
+        # More gradual learning rate reduction
+        callbacks.append(tf.keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.2,
+            patience=5,
+            min_lr=1e-6,
+            min_delta=0.001
+        ))
+        
+        # Add model checkpoint
+        callbacks.append(tf.keras.callbacks.ModelCheckpoint(
+            'best_model.keras',
+            monitor='val_loss',
+            save_best_only=True,
+            save_weights_only=False
+        ))
+        
+        # Calculate class weights
+        if hasattr(train_data, 'class_counts'):
+            total = sum(train_data.class_counts.values())
+            class_weights = {
+                cls: total / (len(train_data.class_counts) * count)
+                for cls, count in train_data.class_counts.items()
+            }
+        else:
+            # Try to compute class weights from the labels
+            try:
+                y_train = np.concatenate([y for x, y in train_data], axis=0)
+                class_counts = np.sum(y_train, axis=0)
+                total = np.sum(class_counts)
+                class_weights = {
+                    i: total / (len(class_counts) * count)
+                    for i, count in enumerate(class_counts)
+                }
+            except:
+                class_weights = None
+        
         history = model.fit(
             train_data,
             validation_data=validation_data,
             epochs=epochs,
             batch_size=batch_size,
             callbacks=callbacks,
+            class_weight=class_weights,
             validation_split=0.2 if validation_data is None else None
         )
         
