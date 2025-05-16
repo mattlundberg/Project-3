@@ -40,13 +40,6 @@ class State(rx.State):
         "Squeezing the Data Lemons...",
         "Summoning the Code Wizards..."
     ]
-    verdicts = [
-        "Pants on Fire",
-        "False",
-        "Mostly False",
-        "Half True",
-        "Mostly True"
-    ]
 
     @rx.var
     def output_count_label(self) -> str:
@@ -111,7 +104,7 @@ class State(rx.State):
         else:
             self.output_label = f"Result: {max_index}\nScore: {max_value:.2f}"
         
-        if max_index == 3:
+        if max_index == 2:
             self.image_src = "/ChatGPT Image May 12, 2025 at 08_24_16 PM.png"
         else:
             self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
