@@ -40,13 +40,6 @@ class State(rx.State):
         "Squeezing the Data Lemons...",
         "Summoning the Code Wizards..."
     ]
-    verdicts = [
-        "Pants on Fire",
-        "False",
-        "Mostly False",
-        "Half True",
-        "Mostly True"
-    ]
 
     @rx.var
     def output_count_label(self) -> str:
@@ -64,7 +57,9 @@ class State(rx.State):
         real_posts = [
             "NASA successfully launches new Mars rover.",
             "WHO recommends regular hand washing to prevent illness.",
-            "Local library hosts summer reading program for kids."
+            "City council announces plans to expand bike lanes for safer commuting",
+            "Building a wall on the U.S.-Mexico border will take literally years.",
+            "FDA approves new gene therapy for treating cystic fibrosis.",
         ]
         if random.choice([True, False]):
             post = random.choice(fake_posts)
@@ -86,7 +81,6 @@ class State(rx.State):
             return []
         return [
             self.submit_phrase, 1000,
-            "Results Ready..."
         ]
 
     def set_random_phrase(self):
@@ -111,7 +105,7 @@ class State(rx.State):
         else:
             self.output_label = f"Result: {max_index}\nScore: {max_value:.2f}"
         
-        if max_index == 3:
+        if max_index == 2:
             self.image_src = "/ChatGPT Image May 12, 2025 at 08_24_16 PM.png"
         else:
             self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
@@ -130,9 +124,6 @@ class State(rx.State):
     def finish_prediction(self):
         self.predict_post()
         self.is_animating = False
-
-
-
 
 def index() -> rx.Component:
     return rx.box(
@@ -212,7 +203,7 @@ def main_page() -> rx.Component:
                 color="black",
             ),
             rx.text(
-                "Paste a social media post to check its authenticity.",
+                "Can you handle the truth?",
                 style={
                     "font-size": "1.5em",
                     "font-family":"Lato",
@@ -224,7 +215,7 @@ def main_page() -> rx.Component:
                 rx.hstack(
                     rx.text_area(
                         value=State.post_text,
-                        placeholder="Enter social media post here...",
+                        placeholder="Paste your social media post here...",
                         style = {"font_family":"Lato"},
                         width="500px",
                         height="50px",
