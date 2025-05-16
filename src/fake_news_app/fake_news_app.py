@@ -6,7 +6,7 @@ from models.modelhelper import ModelHelper
 import numpy as np
 
 model_helper = ModelHelper()
-loaded_model = model_helper.load_model('text_classification_model')
+loaded_model = model_helper.load_model('text_classification_model_final')
 
 class State(rx.State):
     output_count: int = 0
@@ -103,13 +103,11 @@ class State(rx.State):
         max_index = int(np.argmax(result))
         max_value = float(np.max(result))
         if max_index == 0:
-            self.output_label = f"Barely True"
+            self.output_label = f"False 🧅"
         elif max_index == 1:
-            self.output_label = f"Probably False 🧅"
-        elif max_index == 2:
             self.output_label = f"Half True"
-        elif max_index == 3:
-            self.output_label = f"Probably True 📰"
+        elif max_index == 2:
+            self.output_label = f"True 📰"
         else:
             self.output_label = f"Result: {max_index}\nScore: {max_value:.2f}"
         
