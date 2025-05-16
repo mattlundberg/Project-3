@@ -203,7 +203,7 @@ def main_page() -> rx.Component:
                 color="black",
             ),
             rx.text(
-                "Paste a social media post to check its authenticity.",
+                "Can you handle the truth?",
                 style={
                     "font-size": "1.5em",
                     "font-family":"Lato",
@@ -215,7 +215,7 @@ def main_page() -> rx.Component:
                 rx.hstack(
                     rx.text_area(
                         value=State.post_text,
-                        placeholder="Enter social media post here...",
+                        placeholder="Paste your social media post here...",
                         style = {"font_family":"Lato"},
                         width="500px",
                         height="50px",
