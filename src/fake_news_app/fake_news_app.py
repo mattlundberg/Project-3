@@ -59,6 +59,7 @@ class State(rx.State):
             "WHO recommends regular hand washing to prevent illness.",
             "City council announces plans to expand bike lanes for safer commuting",
             "Building a wall on the U.S.-Mexico border will take literally years.",
+            "FDA approves new gene therapy for treating cystic fibrosis.",
         ]
         if random.choice([True, False]):
             post = random.choice(fake_posts)
