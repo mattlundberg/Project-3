@@ -79,7 +79,6 @@ class State(rx.State):
             return []
         return [
             self.submit_phrase, 1000,
-            "Results Ready..."
         ]
 
     def set_random_phrase(self):
