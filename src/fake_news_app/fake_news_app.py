@@ -57,7 +57,7 @@ class State(rx.State):
         real_posts = [
             "NASA successfully launches new Mars rover.",
             "WHO recommends regular hand washing to prevent illness.",
-            "Local library hosts summer reading program for kids.",
+            "City council announces plans to expand bike lanes for safer commuting",
             "Building a wall on the U.S.-Mexico border will take literally years.",
         ]
         if random.choice([True, False]):
