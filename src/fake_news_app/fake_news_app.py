@@ -57,7 +57,8 @@ class State(rx.State):
         real_posts = [
             "NASA successfully launches new Mars rover.",
             "WHO recommends regular hand washing to prevent illness.",
-            "Local library hosts summer reading program for kids."
+            "Local library hosts summer reading program for kids.",
+            "Building a wall on the U.S.-Mexico border will take literally years.",
         ]
         if random.choice([True, False]):
             post = random.choice(fake_posts)
@@ -122,9 +123,6 @@ class State(rx.State):
     def finish_prediction(self):
         self.predict_post()
         self.is_animating = False
-
-
-
 
 def index() -> rx.Component:
     return rx.box(
