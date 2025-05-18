@@ -41,39 +41,43 @@ class State(rx.State):
         "Summoned the Code Wizards...",
     ]
 
-    @rx.var
-    def output_count_label(self) -> str:
-        return f"Count >75%: {self.output_count}"
+    fake_posts_full = [
+        "Aliens land in Central Park, demand pizza.",
+        "Disney World to lower drinking age to 18 next summer.",
+        "Scientists confirm unicorn fossils discovered in Siberia.",
+        "Social Security to be replaced with cryptocurrency, sources say.",
+        "New study: Eating pizza daily increases IQ by 50 points.",
+        "Time traveler from 2075 warns of robot uprising next year.",
+        "World Cup fans in Qatar all paid actors, reports claim.",
+    ]
 
-    def set_post_text(self, value):
-        self.post_text = value
-
+    real_posts_full = [
+        "NASA successfully launches new Mars rover.",
+        "WHO recommends regular hand washing to prevent illness.",
+        "City council announces plans to expand bike lanes for safer commuting.",
+        "FDA approves new gene therapy for treating cystic fibrosis.",
+        "Scientists develop new battery technology for electric cars.",
+        "Global literacy rates reach historic high, UNESCO reports.",
+        "Archaeologists uncover ancient city beneath Mediterranean Sea.",
+    ]
+    fake_posts_pool: list[str] = []
+    real_posts_pool: list[str] = []
+    
+    def get_next_post(self, pool_name: str, full_list_name: str) -> str:
+        pool = getattr(self, pool_name)
+        full_list = getattr(self, full_list_name)
+        if not pool:
+            pool = full_list.copy()
+            random.shuffle(pool)
+        post = pool.pop()
+        setattr(self,pool_name,pool)
+        return post
+    
     def generate_post(self):
-        fake_posts = [
-            "Aliens land in Central Park, demand pizza.",
-            "Florida to ban all rainbows after 2025, officials say.",
-            "Disney World to lower drinking age to 18 next summer.",
-            "Scientists confirm unicorn fossils discovered in Siberia.",
-            "Social Security to be replaced with cryptocurrency, sources say.",
-            "New study: Eating pizza daily increases IQ by 50 points.",
-            "Time traveler from 2075 warns of robot uprising next year.",
-            "World Cup fans in Qatar all paid actors, reports claim.",
-        ]
-
-        real_posts = [
-            "NASA successfully launches new Mars rover.",
-            "WHO recommends regular hand washing to prevent illness.",
-            "City council announces plans to expand bike lanes for safer commuting.",
-            "FDA approves new gene therapy for treating cystic fibrosis.",
-            "Scientists develop new battery technology for electric cars.",
-            "Major city bans single-use plastic bags to reduce pollution.",
-            "Global literacy rates reach historic high, UNESCO reports.",
-            "Archaeologists uncover ancient city beneath Mediterranean Sea.",
-        ]
         if random.choice([True, False]):
-            post = random.choice(fake_posts)
+            post = self.get_next_post('fake_posts_pool', 'fake_posts_full')
         else:
-            post = random.choice(real_posts)
+            post = self.get_next_post('real_posts_pool', 'real_posts_full')
         self.post_text = post
 
 
@@ -135,6 +139,13 @@ class State(rx.State):
     def finish_prediction(self):
         self.predict_post()
         self.is_animating = False
+
+    @rx.var
+    def output_count_label(self) -> str:
+        return f"Count >75%: {self.output_count}"
+
+    def set_post_text(self, value):
+        self.post_text = value
 
 def index() -> rx.Component:
     return rx.box(
