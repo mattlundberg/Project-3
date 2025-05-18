@@ -14,7 +14,7 @@ class State(rx.State):
     output_label: str = ""
     submit_phrase: str | None = None
     animation_key: int = 0
-    image_src: str = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"  # default image
+    image_src: str = "/neutral.png"  # default image
     is_animating: bool = False
 
 
@@ -73,7 +73,7 @@ class State(rx.State):
         self.submit_phrase = None 
         self.animation_key = 0
         self.output_label = ""
-        self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+        self.image_src = "/neutral.png"
 
     @rx.var
     def submit_sequence(self) -> list:
@@ -106,9 +106,9 @@ class State(rx.State):
             self.output_label = f"Result: {max_index}\nScore: {max_value:.2f}"
         
         if max_index == 2:
-            self.image_src = "/ChatGPT Image May 12, 2025 at 08_24_16 PM.png"
+            self.image_src = "/positive.png"
         else:
-            self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+            self.image_src = "/neutral.png"
 
     def submit_and_predict(self):
         self.set_random_phrase()
@@ -118,7 +118,7 @@ class State(rx.State):
         self.set_random_phrase()
         self.is_animating = True
         self.output_label = ""
-        self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+        self.image_src = "/neutral.png"
         self.animation_key += 1
 
     def finish_prediction(self):
