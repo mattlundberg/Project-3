@@ -107,6 +107,8 @@ class State(rx.State):
         
         if max_index == 2:
             self.image_src = "/positive.png"
+        elif max_index == 0:
+            self.image_src = "/negative.png"
         else:
             self.image_src = "/neutral.png"
 
