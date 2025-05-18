@@ -50,16 +50,25 @@ class State(rx.State):
 
     def generate_post(self):
         fake_posts = [
-            "BREAKING: Scientists discover chocolate cures all diseases!",
             "Aliens land in Central Park, demand pizza.",
-            "New study shows cats secretly control the government."
+            "Florida to ban all rainbows after 2025, officials say.",
+            "Disney World to lower drinking age to 18 next summer.",
+            "Scientists confirm unicorn fossils discovered in Siberia.",
+            "Social Security to be replaced with cryptocurrency, sources say.",
+            "New study: Eating pizza daily increases IQ by 50 points.",
+            "Time traveler from 2075 warns of robot uprising next year.",
+            "World Cup fans in Qatar all paid actors, reports claim.",
         ]
+
         real_posts = [
             "NASA successfully launches new Mars rover.",
             "WHO recommends regular hand washing to prevent illness.",
-            "City council announces plans to expand bike lanes for safer commuting",
-            "Building a wall on the U.S.-Mexico border will take literally years.",
+            "City council announces plans to expand bike lanes for safer commuting.",
             "FDA approves new gene therapy for treating cystic fibrosis.",
+            "Scientists develop new battery technology for electric cars.",
+            "Major city bans single-use plastic bags to reduce pollution.",
+            "Global literacy rates reach historic high, UNESCO reports.",
+            "Archaeologists uncover ancient city beneath Mediterranean Sea.",
         ]
         if random.choice([True, False]):
             post = random.choice(fake_posts)
