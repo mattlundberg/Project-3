@@ -48,7 +48,6 @@ class State(rx.State):
     ]
 
     real_posts_full = [
-        "NASA successfully launches new Mars rover.",
         "WHO recommends regular hand washing to prevent illness.",
         "City council announces plans to expand bike lanes for safer commuting.",
         "FDA approves new gene therapy for treating cystic fibrosis.",
