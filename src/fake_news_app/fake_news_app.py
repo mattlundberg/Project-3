@@ -45,10 +45,6 @@ class State(rx.State):
         "Aliens land in Central Park, demand pizza.",
         "Disney World to lower drinking age to 18 next summer.",
         "Scientists confirm unicorn fossils discovered in Siberia.",
-        "Social Security to be replaced with cryptocurrency, sources say.",
-        "New study: Eating pizza daily increases IQ by 50 points.",
-        "Time traveler from 2075 warns of robot uprising next year.",
-        "World Cup fans in Qatar all paid actors, reports claim.",
     ]
 
     real_posts_full = [
@@ -56,9 +52,6 @@ class State(rx.State):
         "WHO recommends regular hand washing to prevent illness.",
         "City council announces plans to expand bike lanes for safer commuting.",
         "FDA approves new gene therapy for treating cystic fibrosis.",
-        "Scientists develop new battery technology for electric cars.",
-        "Global literacy rates reach historic high, UNESCO reports.",
-        "Archaeologists uncover ancient city beneath Mediterranean Sea.",
     ]
     fake_posts_pool: list[str] = []
     real_posts_pool: list[str] = []
