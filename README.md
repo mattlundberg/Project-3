@@ -36,16 +36,107 @@ Our proposal is to build a model that takes in everything from suspicious headli
 Liar Data Set: https://paperswithcode.com/dataset/liar
 
 ## Future Research Questions and Issues
-How can we improve model accuracy and reduce false positives/negatives?
+- How can we improve model accuracy and reduce false positives/negatives?
+- How can we handle evolving misinformation tactics?
+- What are the ethical considerations?
+- How can we scale the application?
+- What additional features would enhance user experience?
 
-How can we handle evolving misinformation tactics?
 
-What are the ethical considerations?
+## Installation Guide
 
-How can we scale the application?
+#### Prerequisites
+- Python 3.8 or higher
+- pip (Python package installer)
+- Git (for version control)
 
-What additional features would enhance user experience?
+#### Method 1: Using requirements.txt (Recommended)
+1. Clone the repository:
+   ```bash
+   git clone [repository-url]
+   cd Project-3
+   ```
 
+2. Create a virtual environment (recommended):
+   ```bash
+   # Windows
+   python -m venv venv
+   .\venv\Scripts\activate
+
+   # macOS/Linux
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r src/requirements.txt
+   ```
+
+#### Method 2: Manual Installation
+If you prefer to install packages individually, you can use pip:
+
+```bash
+# Core Data Science
+pip install pandas==2.1.4 numpy==1.26.2 scipy==1.11.4
+
+# Machine Learning
+pip install tensorflow==2.15.0 torch==2.1.2 scikit-learn==1.3.2
+pip install transformers==4.36.2 sentence-transformers
+
+# Data Visualization
+pip install matplotlib==3.8.2 seaborn==0.13.0 plotly==5.18.0
+
+# Development Tools
+pip install jupyter==1.0.0 ipykernel==6.28.0 notebook==7.0.6
+pip install black==23.12.1 pylint==3.0.3 pytest==7.4.3
+
+# Web Framework
+pip install reflex==0.7.10
+```
+
+#### Troubleshooting Common Issues
+
+1. **CUDA/GPU Support**
+   - For TensorFlow GPU support:
+     ```bash
+     pip install tensorflow-gpu
+     ```
+   - For PyTorch GPU support, visit: https://pytorch.org/get-started/locally/
+
+2. **Version Conflicts**
+   - If you encounter version conflicts, try:
+     ```bash
+     pip install --upgrade pip
+     pip install -r src/requirements.txt --no-deps
+     ```
+
+3. **Memory Issues**
+   - If you encounter memory issues during installation:
+     ```bash
+     pip install --no-cache-dir -r src/requirements.txt
+     ```
+
+4. **Virtual Environment Issues**
+   - If you have trouble activating the virtual environment:
+     ```bash
+     # Windows
+     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+     
+     # macOS/Linux
+     chmod +x venv/bin/activate
+     ```
+
+
+## Running app
+- Navigate to the 'src' folder 
+```bash
+cd src
+```
+-Run reflex command
+```bash
+reflex run
+```
 
 # Program Information
 
@@ -113,6 +204,7 @@ The Onionator is a web application that uses machine learning to classify news h
 - Validation Accuracy: 50%
 - Test Accuracy: 65%
 
+
 ### Application 
 The Onionator 
 
@@ -125,3 +217,4 @@ The Onionator - True Result
 The Onionator - False Result
 
 ![image](https://github.com/user-attachments/assets/dda06fd1-6f99-4a35-a04d-22cddc02e437)
+
