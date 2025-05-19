@@ -204,12 +204,17 @@ The Onionator is a web application that uses machine learning to classify news h
 - Validation Accuracy: 50%
 - Test Accuracy: 65%
 
-## UI Screen shots.
 
-Init Page
+### Application 
+The Onionator 
 
-image.png
+![image](https://github.com/user-attachments/assets/66fb262c-5c53-44a7-80bf-c9e67201c748)
 
-App Page
+The Onionator - True Result
 
+![image](https://github.com/user-attachments/assets/c777ff1c-9219-48de-818f-60c6474c16c5)
+
+The Onionator - False Result
+
+![image](https://github.com/user-attachments/assets/dda06fd1-6f99-4a35-a04d-22cddc02e437)
 
