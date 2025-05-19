@@ -17,40 +17,99 @@ Join our Slack channel for project discussions and updates:
 |----------|----------|----------|
 | Project Ideation | 4/29/25 | Complete |
 | [Back End] Data Fetching & Clean Up | 5/5/25 | Complete |
-| [Back End] Model Build | 5/12/25 | In Progress |
+| [Back End] Model Build | 5/12/25 | Complete |
 | [Front End] Build Title Page | 5/8/25 | Complete |
 | [Front End] Build Main/App Page | 5/8/25 | Complete |
-| [Front End] Refine Main/App Features | 5/12/25 | In Progress |
-| Bridge Front and Back End | 5/13/25 | To Do |
-| Create Presentation | 5/15/25 | To Do |
+| [Front End] Refine Main/App Features | 5/12/25 | Complete |
+| Bridge Front and Back End | 5/13/25 | Complete |
+| Create Presentation | 5/15/25 | Complete |
 
 ## Proposal
-Did you hear about the latest headline claiming a celebrity turned into an avocado? No? Well, that’s exactly the kind of fake news-and viral satire-that floods our social media feeds every day. These outrageous posts are as wild as your uncle’s conspiracy theories after one too many holiday dinners. Scrolling through your feed can feel like diving into a maze of confusing and sometimes hilarious stories that make you question reality (and your family gatherings). 
+Did you hear about the latest headline claiming a celebrity turned into an avocado? No? Well, that's exactly the kind of fake news-and viral satire-that floods our social media feeds every day. These outrageous posts are as wild as your uncle's conspiracy theories after one too many holiday dinners. Scrolling through your feed can feel like diving into a maze of confusing and sometimes hilarious stories that make you question reality (and your family gatherings). 
 
-Our proposal is to build a model that takes in everything from suspicious headlines to eyebrow-raising tweets and tells you whether you’re about to share real news, clickbait, or the latest viral joke-saving you from spreading “BREAKING: Celebrity Turns Into Avocado” level nonsense.
+Our proposal is to build a model that takes in everything from suspicious headlines to eyebrow-raising tweets and tells you whether you're about to share real news, clickbait, or the latest viral joke-saving you from spreading "BREAKING: Celebrity Turns Into Avocado" level nonsense.
 
 ## Slide Deck
 [The Onionator: Peeling Back Fake News One Headline at a Time](TBD)
 
 ## Data sets
-TBD
+Liar Data Set: https://paperswithcode.com/dataset/liar
 
 ## Future Research Questions and Issues
-TBD
+How can we improve model accuracy and reduce false positives/negatives?
+
+How can we handle evolving misinformation tactics?
+
+What are the ethical considerations?
+
+How can we scale the application?
+
+What additional features would enhance user experience?
+
 
 # Program Information
 
 ## Overview
+The Onionator is a web application that uses machine learning to classify news headlines and text as either real news or potential misinformation/satire. The app provides an intuitive interface for users to input text and receive instant feedback on its credibility.
 
 ### Core Features
+- Text input field for news headlines/content
+- Real-time classification using trained ML model
+- Visual feedback with custom graphics
+- Engaging loading animations
+- Light/dark mode toggle
+- Mobile-responsive design
 
 ### Programming Languages
+- Python (Backend/ML)
+- JavaScript/TypeScript (Frontend)
+- HTML/CSS
+- SQL (Database)
 
 ### Required Libraries/Dependencies
- 
+
+#### Core Data Science and Numerical Computing
+- Pandas - Data processing and analysis
+- NumPy - Numerical operations
+- SciPy - Scientific computing
+
+#### Machine Learning and Deep Learning
+- TensorFlow/Keras - ML model development
+- PyTorch - Deep learning framework
+- Scikit-learn - ML preprocessing and traditional algorithms
+- Transformers - NLP models and text processing
+- SentenceTransformers - Text embedding generation
+
+#### Data Visualization
+- Matplotlib - Basic plotting
+- Seaborn - Statistical visualizations
+- Plotly - Interactive visualizations
+
+#### Development and Testing
+- Jupyter/IPykernel - Development environment
+- Pylint - Code linting
+- Pytest - Testing framework
+- TQDM - Progress bars
+
+#### Data Processing and Utilities
+- Datasets - Data loading and management
+- XLRD - Legacy Excel support
+- Python-dotenv - Environment variables management
+
+#### Web Development
+- Reflex - Web framework
 
 ### Development Environment
-
+- Visual Studio Code
+- Jupyter Notebooks
+- Git/GitHub
+- Google Colab (Model training)
+- Local development servers
+- Docker containers
 
 ### Model Results
+- Model Type: Neural Network 
+- Training Accuracy: 75%
+- Validation Accuracy: 50%
+- Test Accuracy: 65%
 
