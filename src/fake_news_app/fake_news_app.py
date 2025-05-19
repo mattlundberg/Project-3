@@ -14,57 +14,70 @@ class State(rx.State):
     output_label: str = ""
     submit_phrase: str | None = None
     animation_key: int = 0
-    image_src: str = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"  # default image
+    image_src: str = "/neutral.png"  # default image
     is_animating: bool = False
 
 
     submit_phrases = [
-        "Feeding Fake News Hamsters...",
-        "Combing Through Dumpster X...",
-        "Greasing the Gears of Progress...",
-        "Polishing the Data Diamonds...",
-        "Waking Up the Server Gremlins...",
-        "Tickling the Code Monkeys...",
-        "Charging the Quantum Batteries...",
-        "Brewing the Algorithm Soup...",
-        "Herding Digital Cats...",
-        "Spinning the Data Wheel...",
-        "Sharpening the Logic Knives...",
-        "Tuning the Neural Networks...",
-        "Stirring the Binary Cauldron...",
-        "Training the Robot Ninjas...",
-        "Dusting Off the Server Cobwebs...",
-        "Juggling Bits and Bytes...",
-        "Chasing Down Bug Gremlins...",
-        "Wiring the Synapse Circuits...",
-        "Squeezing the Data Lemons...",
-        "Summoning the Code Wizards..."
+        "Fed Fake News Hamsters...",
+        "Combed Through Dumpster X...",
+        "Greased the Gears of Progress...",
+        "Polished the Data Diamonds...",
+        "Woke Up the Server Gremlins...",
+        "Tickled the Code Monkeys...",
+        "Charged the Quantum Batteries...",
+        "Brewed the Algorithm Soup...",
+        "Herded Digital Cats...",
+        "Spun the Data Wheel...",
+        "Sharpened the Logic Knives...",
+        "Tuned the Neural Networks...",
+        "Stirred the Binary Cauldron...",
+        "Trained the Robot Ninjas...",
+        "Dusted Off the Server Cobwebs...",
+        "Juggled Bits and Bytes...",
+        "Chased Down Bug Gremlins...",
+        "Wired the Synapse Circuits...",
+        "Squeezed the Data Lemons...",
+        "Summoned the Code Wizards...",
     ]
 
-    @rx.var
-    def output_count_label(self) -> str:
-        return f"Count >75%: {self.output_count}"
+    fake_posts_full = [
+        "Aliens land in Central Park, demand pizza.",
+        "Disney World to lower drinking age to 18 next summer.",
+        "Scientists confirm unicorn fossils discovered in Siberia.",
+        "Social Security to be replaced with cryptocurrency, sources say.",
+        "New study: Eating pizza daily increases IQ by 50 points.",
+        "Time traveler from 2075 warns of robot uprising next year.",
+        "World Cup fans in Qatar all paid actors, reports claim.",
+    ]
 
-    def set_post_text(self, value):
-        self.post_text = value
-
+    real_posts_full = [
+        "NASA successfully launches new Mars rover.",
+        "WHO recommends regular hand washing to prevent illness.",
+        "City council announces plans to expand bike lanes for safer commuting.",
+        "FDA approves new gene therapy for treating cystic fibrosis.",
+        "Scientists develop new battery technology for electric cars.",
+        "Global literacy rates reach historic high, UNESCO reports.",
+        "Archaeologists uncover ancient city beneath Mediterranean Sea.",
+    ]
+    fake_posts_pool: list[str] = []
+    real_posts_pool: list[str] = []
+    
+    def get_next_post(self, pool_name: str, full_list_name: str) -> str:
+        pool = getattr(self, pool_name)
+        full_list = getattr(self, full_list_name)
+        if not pool:
+            pool = full_list.copy()
+            random.shuffle(pool)
+        post = pool.pop()
+        setattr(self,pool_name,pool)
+        return post
+    
     def generate_post(self):
-        fake_posts = [
-            "BREAKING: Scientists discover chocolate cures all diseases!",
-            "Aliens land in Central Park, demand pizza.",
-            "New study shows cats secretly control the government."
-        ]
-        real_posts = [
-            "NASA successfully launches new Mars rover.",
-            "WHO recommends regular hand washing to prevent illness.",
-            "City council announces plans to expand bike lanes for safer commuting",
-            "Building a wall on the U.S.-Mexico border will take literally years.",
-            "FDA approves new gene therapy for treating cystic fibrosis.",
-        ]
         if random.choice([True, False]):
-            post = random.choice(fake_posts)
+            post = self.get_next_post('fake_posts_pool', 'fake_posts_full')
         else:
-            post = random.choice(real_posts)
+            post = self.get_next_post('real_posts_pool', 'real_posts_full')
         self.post_text = post
 
 
@@ -73,7 +86,7 @@ class State(rx.State):
         self.submit_phrase = None 
         self.animation_key = 0
         self.output_label = ""
-        self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+        self.image_src = "/neutral.png"
 
     @rx.var
     def submit_sequence(self) -> list:
@@ -106,9 +119,11 @@ class State(rx.State):
             self.output_label = f"Result: {max_index}\nScore: {max_value:.2f}"
         
         if max_index == 2:
-            self.image_src = "/ChatGPT Image May 12, 2025 at 08_24_16 PM.png"
+            self.image_src = "/positive.png"
+        elif max_index == 0:
+            self.image_src = "/negative.png"
         else:
-            self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+            self.image_src = "/neutral.png"
 
     def submit_and_predict(self):
         self.set_random_phrase()
@@ -118,12 +133,19 @@ class State(rx.State):
         self.set_random_phrase()
         self.is_animating = True
         self.output_label = ""
-        self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+        self.image_src = "/neutral.png"
         self.animation_key += 1
 
     def finish_prediction(self):
         self.predict_post()
         self.is_animating = False
+
+    @rx.var
+    def output_count_label(self) -> str:
+        return f"Count >75%: {self.output_count}"
+
+    def set_post_text(self, value):
+        self.post_text = value
 
 def index() -> rx.Component:
     return rx.box(
