@@ -6,7 +6,7 @@ from models.modelhelper import ModelHelper
 import numpy as np
 
 model_helper = ModelHelper()
-loaded_model = model_helper.load_model('text_classification_model')
+loaded_model = model_helper.load_model('text_classification_model_final')
 
 class State(rx.State):
     output_count: int = 0
@@ -14,62 +14,62 @@ class State(rx.State):
     output_label: str = ""
     submit_phrase: str | None = None
     animation_key: int = 0
-    image_src: str = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"  # default image
+    image_src: str = "/neutral.png"  # default image
     is_animating: bool = False
 
 
     submit_phrases = [
-        "Feeding Fake News Hamsters...",
-        "Combing Through Dumpster X...",
-        "Greasing the Gears of Progress...",
-        "Polishing the Data Diamonds...",
-        "Waking Up the Server Gremlins...",
-        "Tickling the Code Monkeys...",
-        "Charging the Quantum Batteries...",
-        "Brewing the Algorithm Soup...",
-        "Herding Digital Cats...",
-        "Spinning the Data Wheel...",
-        "Sharpening the Logic Knives...",
-        "Tuning the Neural Networks...",
-        "Stirring the Binary Cauldron...",
-        "Training the Robot Ninjas...",
-        "Dusting Off the Server Cobwebs...",
-        "Juggling Bits and Bytes...",
-        "Chasing Down Bug Gremlins...",
-        "Wiring the Synapse Circuits...",
-        "Squeezing the Data Lemons...",
-        "Summoning the Code Wizards..."
-    ]
-    verdicts = [
-        "Pants on Fire",
-        "False",
-        "Mostly False",
-        "Half True",
-        "Mostly True"
+        "Fed Fake News Hamsters...",
+        "Combed Through Dumpster X...",
+        "Greased the Gears of Progress...",
+        "Polished the Data Diamonds...",
+        "Woke Up the Server Gremlins...",
+        "Tickled the Code Monkeys...",
+        "Charged the Quantum Batteries...",
+        "Brewed the Algorithm Soup...",
+        "Herded Digital Cats...",
+        "Spun the Data Wheel...",
+        "Sharpened the Logic Knives...",
+        "Tuned the Neural Networks...",
+        "Stirred the Binary Cauldron...",
+        "Trained the Robot Ninjas...",
+        "Dusted Off the Server Cobwebs...",
+        "Juggled Bits and Bytes...",
+        "Chased Down Bug Gremlins...",
+        "Wired the Synapse Circuits...",
+        "Squeezed the Data Lemons...",
+        "Summoned the Code Wizards...",
     ]
 
-    @rx.var
-    def output_count_label(self) -> str:
-        return f"Count >75%: {self.output_count}"
+    fake_posts_full = [
+        "Aliens land in Central Park, demand pizza.",
+        "Disney World to lower drinking age to 18 next summer.",
+        "Scientists confirm unicorn fossils discovered in Siberia.",
+    ]
 
-    def set_post_text(self, value):
-        self.post_text = value
-
+    real_posts_full = [
+        "WHO recommends regular hand washing to prevent illness.",
+        "City council announces plans to expand bike lanes for safer commuting.",
+        "FDA approves new gene therapy for treating cystic fibrosis.",
+    ]
+    fake_posts_pool: list[str] = []
+    real_posts_pool: list[str] = []
+    
+    def get_next_post(self, pool_name: str, full_list_name: str) -> str:
+        pool = getattr(self, pool_name)
+        full_list = getattr(self, full_list_name)
+        if not pool:
+            pool = full_list.copy()
+            random.shuffle(pool)
+        post = pool.pop()
+        setattr(self,pool_name,pool)
+        return post
+    
     def generate_post(self):
-        fake_posts = [
-            "BREAKING: Scientists discover chocolate cures all diseases!",
-            "Aliens land in Central Park, demand pizza.",
-            "New study shows cats secretly control the government."
-        ]
-        real_posts = [
-            "NASA successfully launches new Mars rover.",
-            "WHO recommends regular hand washing to prevent illness.",
-            "Local library hosts summer reading program for kids."
-        ]
         if random.choice([True, False]):
-            post = random.choice(fake_posts)
+            post = self.get_next_post('fake_posts_pool', 'fake_posts_full')
         else:
-            post = random.choice(real_posts)
+            post = self.get_next_post('real_posts_pool', 'real_posts_full')
         self.post_text = post
 
 
@@ -78,7 +78,7 @@ class State(rx.State):
         self.submit_phrase = None 
         self.animation_key = 0
         self.output_label = ""
-        self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+        self.image_src = "/neutral.png"
 
     @rx.var
     def submit_sequence(self) -> list:
@@ -86,7 +86,6 @@ class State(rx.State):
             return []
         return [
             self.submit_phrase, 1000,
-            "Results Ready..."
         ]
 
     def set_random_phrase(self):
@@ -103,20 +102,20 @@ class State(rx.State):
         max_index = int(np.argmax(result))
         max_value = float(np.max(result))
         if max_index == 0:
-            self.output_label = f"Barely True"
+            self.output_label = f"False 🧅"
         elif max_index == 1:
-            self.output_label = f"Probably False 🧅"
-        elif max_index == 2:
             self.output_label = f"Half True"
-        elif max_index == 3:
-            self.output_label = f"Probably True 📰"
+        elif max_index == 2:
+            self.output_label = f"True 📰"
         else:
             self.output_label = f"Result: {max_index}\nScore: {max_value:.2f}"
         
-        if max_index == 3:
-            self.image_src = "/ChatGPT Image May 12, 2025 at 08_24_16 PM.png"
+        if max_index == 2:
+            self.image_src = "/positive.png"
+        elif max_index == 0:
+            self.image_src = "/negative.png"
         else:
-            self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+            self.image_src = "/neutral.png"
 
     def submit_and_predict(self):
         self.set_random_phrase()
@@ -126,15 +125,19 @@ class State(rx.State):
         self.set_random_phrase()
         self.is_animating = True
         self.output_label = ""
-        self.image_src = "/ChatGPT Image May 12, 2025 at 07_52_42 PM.png"
+        self.image_src = "/neutral.png"
         self.animation_key += 1
 
     def finish_prediction(self):
         self.predict_post()
         self.is_animating = False
 
+    @rx.var
+    def output_count_label(self) -> str:
+        return f"Count >75%: {self.output_count}"
 
-
+    def set_post_text(self, value):
+        self.post_text = value
 
 def index() -> rx.Component:
     return rx.box(
@@ -214,7 +217,7 @@ def main_page() -> rx.Component:
                 color="black",
             ),
             rx.text(
-                "Paste a social media post to check its authenticity.",
+                "Can you handle the truth?",
                 style={
                     "font-size": "1.5em",
                     "font-family":"Lato",
@@ -226,7 +229,7 @@ def main_page() -> rx.Component:
                 rx.hstack(
                     rx.text_area(
                         value=State.post_text,
-                        placeholder="Enter social media post here...",
+                        placeholder="Paste your social media post here...",
                         style = {"font_family":"Lato"},
                         width="500px",
                         height="50px",
