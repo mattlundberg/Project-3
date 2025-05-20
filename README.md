@@ -218,3 +218,23 @@ The Onionator - False Result
 
 ![image](https://github.com/user-attachments/assets/dda06fd1-6f99-4a35-a04d-22cddc02e437)
 
+## Model Decision Reasoning
+#### Why GELU over ReLU
+- GELU has a smoother trasition gradiant
+- GELU is better able to capture more complex data patterns which was needed for trying to understand language
+- does not suffer from having neurons become inactive due to negative inputs. 
+
+#### Why we chose softmax as out output activation.
+- It is a standard approach to multi output/class classification.
+- This also gave estimates for each output showing how strongly the text matched each category. This could be used to show how strongly the input would present in each classification.
+
+#### Why we added an Attention Mechanism
+- It added weighting to the model
+- We used it before the dimesion reduction so that the effects would propigate through the rest of the layers.
+- The attention model helps the sentence transformer (MiniLM) focus better on the relevant parts of the text
+
+#### Why we decided to use MiniLM
+- It simplified the embedding process. 
+- Sped up training times
+- Had a standardized system and account for more words than we had in our dataset.
+- Had a standaried output of 384
