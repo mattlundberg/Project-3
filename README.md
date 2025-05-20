@@ -204,6 +204,34 @@ The Onionator is a web application that uses machine learning to classify news h
 - Validation Accuracy: 50%
 - Test Accuracy: 65%
 
+### Model Architecture Summary
+
+| Layer (type) | Output Shape | Param # | Connected to |
+|--------------|--------------|---------|--------------|
+| input_1 (InputLayer) | [(None, 384)] | 0 | [] |
+| layer_normalization (LayerNormalization) | (None, 384) | 768 | ['input_1[0][0]'] |
+| dense (Dense) | (None, 768) | 295680 | ['layer_normalization[0][0]'] |
+| layer_normalization_1 (LayerNormalization) | (None, 768) | 1536 | ['dense[0][0]'] |
+| activation (Activation) | (None, 768) | 0 | ['layer_normalization_1[0][0]'] |
+| dropout (Dropout) | (None, 768) | 0 | ['activation[0][0]'] |
+| dense_1 (Dense) | (None, 768) | 590592 | ['dropout[0][0]'] |
+| multiply (Multiply) | (None, 768) | 0 | ['dropout[0][0]', 'dense_1[0][0]'] |
+| dense_2 (Dense) | (None, 512) | 393728 | ['multiply[0][0]'] |
+| layer_normalization_2 (LayerNormalization) | (None, 512) | 1024 | ['dense_2[0][0]'] |
+| activation_1 (Activation) | (None, 512) | 0 | ['layer_normalization_2[0][0]'] |
+| dropout_1 (Dropout) | (None, 512) | 0 | ['activation_1[0][0]'] |
+| dense_3 (Dense) | (None, 256) | 131328 | ['dropout_1[0][0]'] |
+| layer_normalization_3 (LayerNormalization) | (None, 256) | 512 | ['dense_3[0][0]'] |
+| activation_2 (Activation) | (None, 256) | 0 | ['layer_normalization_3[0][0]'] |
+| dropout_2 (Dropout) | (None, 256) | 0 | ['activation_2[0][0]'] |
+| dense_4 (Dense) | (None, 3) | 771 | ['dropout_2[0][0]'] |
+
+Total params: 1,415,939 (5.40 MB)
+Trainable params: 1,415,939 (5.40 MB)
+Non-trainable params: 0 (0.00 Byte)
+
+## UI Screen shots.
+=======
 
 ### Application 
 The Onionator 
